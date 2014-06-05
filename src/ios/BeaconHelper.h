@@ -1,8 +1,8 @@
 //
-//  GeofencingHelper.h
-//  GeofencingTest
+//  BeaconHelper.h
+//  Beacon
 //
-//  Created by Daniel Mauer on 16.12.13.
+//  Created by Daniel Mauer on 05.06.14.
 //
 //
 
@@ -50,7 +50,7 @@ typedef NSInteger LocationAccuracy;
 @class CDVViewController;
 @class CDVPlugin;
 @class UIWebView;
-@interface GeofencingHelper : NSObject <CLLocationManagerDelegate>
+@interface BeaconHelper : NSObject <CLLocationManagerDelegate>
 
 @property (nonatomic, retain) CLLocationManager* locationManager;
 @property (nonatomic, assign) UIWebView* webView;

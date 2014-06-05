@@ -1,8 +1,8 @@
 //
-//  Geofencing.h
-//  GeofencingTest
+//  Beacon.h
+//  Beacon
 //
-//  Created by Daniel Mauer on 16.12.13.
+//  Created by Daniel Mauer on 05.06.14.
 //
 //
 
@@ -12,7 +12,7 @@
 #import <Cordova/CDVPlugin.h>
 #import <Cordova/CDV.h>
 #import <CoreLocation/CoreLocation.h>
-#import "GeofencingHelper.h"
+#import "BeaconHelper.h"
 #import <MapKit/MapKit.h>
 
 #define KEY_REGION_ID @"fid"
@@ -21,7 +21,7 @@
 #define KEY_REGION_RADIUS @"radius"
 #define KEY_REGION_ACCURACY @"accuracy"
 
-@interface Geofencing : CDVPlugin <CLLocationManagerDelegate>
+@interface Beacon : CDVPlugin <CLLocationManagerDelegate>
 
 - (BOOL) isLocationServicesEnabled;
 - (BOOL) isAuthorized;

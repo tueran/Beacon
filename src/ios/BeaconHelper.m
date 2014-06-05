@@ -1,15 +1,15 @@
 //
-//  GeofencingHelper.m
-//  GeofencingTest
+//  BeaconHelper.m
+//  Beacon
 //
-//  Created by Daniel Mauer on 16.12.13.
+//  Created by Daniel Mauer on 05.06.14.
 //
 //
 
-#import "GeofencingHelper.h"
+#import "BeaconHelper.h"
 
 
-static GeofencingHelper *sharedGeofencingHelper = nil;
+static BeaconHelper *sharedBeaconHelper = nil;
 
 #pragma mark - LocationData Implementation
 
@@ -34,7 +34,7 @@ static GeofencingHelper *sharedGeofencingHelper = nil;
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #pragma mark - GeofencingHelper Implementation
-@implementation GeofencingHelper
+@implementation BeaconHelper
 
 @synthesize webView;
 @synthesize locationManager;
@@ -44,19 +44,19 @@ static GeofencingHelper *sharedGeofencingHelper = nil;
 
 
 
--(void)saveGeofenceCallbackId:(NSString *)callbackId
+-(void)saveBeaconCallbackId:(NSString *)callbackId
 {
     if (!self.locationData) {
         self.locationData = [[LocationData alloc] init];
     }
     
     LocationData* lData = self.locationData;
-    if (!lData.geofenceCallbacks) {
-        lData.geofenceCallbacks = [NSMutableArray array];
+    if (!lData.beaconCallbacks) {
+        lData.beaconCallbacks = [NSMutableArray array];
     }
     
     // add the callbackId into the array so we can call back when get data
-    [lData.geofenceCallbacks enqueue:callbackId];
+    [lData.beaconCallbacks enqueue:callbackId];
 }
 
 -(void)saveLocationCallbackId:(NSString *)callbackId
@@ -80,7 +80,7 @@ static GeofencingHelper *sharedGeofencingHelper = nil;
 - (void) locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region
 {
     if (self.didLaunchForRegionUpdate) {
-        NSString *path = [GeofencingHelper applicationDocumentsDirectory];
+        NSString *path = [BeaconHelper applicationDocumentsDirectory];
         NSString *finalPath = [path stringByAppendingPathComponent:@"notifications.txt"];
         
         NSMutableArray *updates = [NSMutableArray arrayWithContentsOfFile:finalPath];

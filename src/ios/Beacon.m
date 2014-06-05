@@ -1,12 +1,12 @@
 //
-//  Geofencing.m
-//  GeofencingTest
+//  Beacon.m
+//  Beacon
 //
-//  Created by Daniel Mauer on 16.12.13.
+//  Created by Daniel Mauer on 05.06.14.
 //
 //
 
-#import "Geofencing.h"
+#import "Beacon.h"
 
 #import <Cordova/CDV.h>
 #import <Cordova/CDVViewController.h>
@@ -14,13 +14,13 @@
 
 
 
-#pragma mark - Geofenfing Implementation
+#pragma mark - Beacon Implementation
 
-@implementation Geofencing
+@implementation Beacon
 
 - (CDVPlugin*) initWithWebView:(UIWebView*)theWebView
 {
-    self = (Geofencing*)[super initWithWebView:(UIWebView*)theWebView];
+    self = (Beacon*)[super initWithWebView:(UIWebView*)theWebView];
     if (self)
     {
     
