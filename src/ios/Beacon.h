@@ -14,6 +14,7 @@
 #import <CoreLocation/CoreLocation.h>
 #import "BeaconHelper.h"
 #import <MapKit/MapKit.h>
+#import <CoreBluetooth/CoreBluetooth.h>
 
 #define KEY_REGION_ID @"fid"
 #define KEY_REGION_LAT @"latitude"

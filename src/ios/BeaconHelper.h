@@ -12,6 +12,7 @@
 #import <Cordova/CDVPlugin.h>
 #import <Cordova/CDV.h>
 #import <MapKit/MapKit.h>
+#import <CoreBluetooth/CoreBluetooth.h>
 
 
 enum LocationStatus {
