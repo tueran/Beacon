@@ -17,7 +17,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
 
 @synthesize locationStatus, locationInfo;
 @synthesize locationCallbacks;
-@synthesize geofenceCallbacks;
+@synthesize beaconCallbacks;
 
 -(LocationData*) init
 {
@@ -115,7 +115,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
         [self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
         
         // Remove for GoLive and change it
-        NSString *path = [GeofencingHelper applicationDocumentsDirectory];
+        NSString *path = [BeaconHelper applicationDocumentsDirectory];
         NSString *finalPath2 = [path stringByAppendingPathComponent:@"siteforum_geofencing.txt"];
         
         NSMutableArray *dicts = [NSMutableArray arrayWithContentsOfFile:finalPath2];
@@ -185,7 +185,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
 - (void) locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region
 {
     if (self.didLaunchForRegionUpdate) {
-        NSString *path = [GeofencingHelper applicationDocumentsDirectory];
+        NSString *path = [BeaconHelper applicationDocumentsDirectory];
         NSString *finalPath = [path stringByAppendingPathComponent:@"notifications.txt"];
         NSMutableArray *updates = [NSMutableArray arrayWithContentsOfFile:finalPath];
         
@@ -217,7 +217,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
         
         // Remove for GoLive and change it
         
-        NSString *path = [GeofencingHelper applicationDocumentsDirectory];
+        NSString *path = [BeaconHelper applicationDocumentsDirectory];
         NSString *finalPath2 = [path stringByAppendingPathComponent:@"siteforum_geofencing.txt"];
         
         NSMutableArray *dicts = [NSMutableArray arrayWithContentsOfFile:finalPath2];
@@ -228,7 +228,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
         
         [dicts addObject:dict];
         [dicts writeToFile:finalPath2 atomically:YES];
-
+        
     }
     
     
@@ -244,7 +244,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
     //NSString* geofencingUrl = [NSString stringWithFormat:@"https://%@/sf/daniel/%@/exit?s=&token=%@", getHost, region.identifier, getUsertoken];
     NSURL* sfUrl = [NSURL URLWithString:geofencingUrl];
     NSLog(@"URL: %@", sfUrl);
-
+    
     // set the request
     NSURLRequest* sfRequest = [NSURLRequest requestWithURL:sfUrl];
     NSOperationQueue* sfQueue = [[NSOperationQueue alloc] init];
@@ -312,7 +312,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
     
     // Remove for GoLive and change it
     
-    NSString *path = [GeofencingHelper applicationDocumentsDirectory];
+    NSString *path = [BeaconHelper applicationDocumentsDirectory];
     NSString *finalPath2 = [path stringByAppendingPathComponent:@"siteforum_geofencing_didUpdateToLocation_fromLocation.txt"];
     
     NSMutableArray *dicts = [NSMutableArray arrayWithContentsOfFile:finalPath2];
@@ -323,7 +323,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
     
     [dicts addObject:dict];
     [dicts writeToFile:finalPath2 atomically:YES];
-
+    
     
 }
 
@@ -335,15 +335,15 @@ static BeaconHelper *sharedBeaconHelper = nil;
     [posError setObject: region.identifier forKey: @"regionid"];
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:posError];
-    for (NSString *callbackId in self.locationData.geofenceCallbacks) {
+    for (NSString *callbackId in self.locationData.beaconCallbacks) {
         if (callbackId) {
             [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
         }
     }
     
-
     
-    self.locationData.geofenceCallbacks = [NSMutableArray array];
+    
+    self.locationData.beaconCallbacks = [NSMutableArray array];
 }
 
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error{
@@ -357,7 +357,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
         }
     }
     
-
+    
     
     self.locationData.locationCallbacks = [NSMutableArray array];
 }
@@ -374,14 +374,14 @@ static BeaconHelper *sharedBeaconHelper = nil;
     [posError setObject: [NSNumber numberWithInt: CDVCommandStatus_OK] forKey:@"code"];
     [posError setObject: @"Region Success" forKey: @"message"];
     
-  
+    
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
-    for (NSString *callbackId in self.locationData.geofenceCallbacks) {
+    for (NSString *callbackId in self.locationData.beaconCallbacks) {
         if (callbackId) {
             [self.commandDelegate sendPluginResult:result callbackId:callbackId];
         }
     }
-    self.locationData.geofenceCallbacks = [NSMutableArray array];
+    self.locationData.beaconCallbacks = [NSMutableArray array];
 }
 
 
@@ -397,7 +397,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
         }
     }
     
-
+    
     self.locationData.locationCallbacks = [NSMutableArray array];
 }
 
@@ -407,7 +407,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
     NSMutableDictionary* posError = [NSMutableDictionary dictionaryWithCapacity:2];
     [posError setObject: [NSNumber numberWithInt: errorCode] forKey:@"code"];
     [posError setObject: message ? message : @"" forKey: @"message"];
-
+    
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
     for (NSString *callbackId in self.locationData.locationCallbacks) {
         if (callbackId) {
@@ -425,15 +425,15 @@ static BeaconHelper *sharedBeaconHelper = nil;
     [posError setObject: message ? message : @"" forKey: @"message"];
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:posError];
-    for (NSString *callbackId in self.locationData.geofenceCallbacks) {
+    for (NSString *callbackId in self.locationData.beaconCallbacks) {
         if (callbackId) {
             [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
         }
     }
     
-
     
-    self.locationData.geofenceCallbacks = [NSMutableArray array];
+    
+    self.locationData.beaconCallbacks = [NSMutableArray array];
 }
 
 - (id) init {
@@ -442,22 +442,22 @@ static BeaconHelper *sharedBeaconHelper = nil;
         self.locationManager = [[CLLocationManager alloc] init];
         self.locationManager.delegate = self; // Tells the location manager to send updates to this object
         self.locationData = nil;
-
+        
     }
     return self;
 }
 
-+(GeofencingHelper *)sharedGeofencingHelper
++(BeaconHelper *)sharedBeaconHelper
 {
     //objects using shard instance are responsible for retain/release count
     //retain count must remain 1 to stay in mem
     
-    if (!sharedGeofencingHelper)
+    if (!sharedBeaconHelper)
     {
-        sharedGeofencingHelper = [[GeofencingHelper alloc] init];
+        sharedBeaconHelper = [[BeaconHelper alloc] init];
     }
     
-    return sharedGeofencingHelper;
+    return sharedBeaconHelper;
 }
 
 
@@ -469,4 +469,4 @@ static BeaconHelper *sharedBeaconHelper = nil;
 }
 
 @end
- 
+

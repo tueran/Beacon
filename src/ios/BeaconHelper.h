@@ -40,12 +40,12 @@ typedef NSInteger LocationAccuracy;
 @property (nonatomic, assign) LocationStatus locationStatus;
 @property (nonatomic, retain) CLLocation* locationInfo;
 @property (nonatomic, retain) NSMutableArray* locationCallbacks;
-@property (nonatomic, retain) NSMutableArray* geofenceCallbacks;
+@property (nonatomic, retain) NSMutableArray* beaconCallbacks;
 
 @end
 
 
-#pragma mark - Geofencing Helper Interface
+#pragma mark - Beacon Helper Interface
 @class CDVWebViewDelegate;
 @class CDVViewController;
 @class CDVPlugin;
@@ -58,7 +58,7 @@ typedef NSInteger LocationAccuracy;
 @property (nonatomic, retain) LocationData* locationData;
 @property (nonatomic, assign) id <CDVCommandDelegate> commandDelegate;
 
-+(GeofencingHelper*)sharedGeofencingHelper;
++(BeaconHelper*)sharedBeaconHelper;
 
 + (NSString*) applicationDocumentsDirectory;
 
@@ -68,7 +68,7 @@ typedef NSInteger LocationAccuracy;
 - (void) returnRegionSuccess;
 - (void) returnLocationSuccess;
 
-- (void) saveGeofenceCallbackId:(NSString *) callbackId;
+- (void) saveBeaconCallbackId:(NSString *) callbackId;
 - (void) saveLocationCallbackId:(NSString *) callbackId;
 
 @end
