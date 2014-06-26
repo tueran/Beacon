@@ -157,6 +157,20 @@ static BeaconHelper *sharedBeaconHelper = nil;
     self.locationData.locationCallbacks = [NSMutableArray array];
 }
 
+- (void) returnBeaconError: (NSUInteger) errorCode withMessage: (NSString*) message
+{
+    NSMutableDictionary* posError = [NSMutableDictionary dictionaryWithCapacity:2];
+    [posError setObject: [NSNumber numberWithInt: errorCode] forKey:@"code"];
+    [posError setObject: message ? message : @"" forKey: @"message"];
+    
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:posError];
+    for (NSString *callbackId in self.locationData.beaconCallbacks) {
+        if (callbackId) {
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
+        }
+    }
+    self.locationData.beaconCallbacks = [NSMutableArray array];
+}
 
 - (id) init {
     self = [super init];
