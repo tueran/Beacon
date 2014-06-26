@@ -62,7 +62,7 @@ To remove an existing region use the Beacon removeRegion function. The parameter
     major - int - latitude of the region.
     minor - int - Specifies the radius in meters of the region.
 
-Example:
+<strong>Example: removeRegion (Beacon)</strong>
 ```bash
 Beacon.removeRegion(function(){
                              alert('success');
@@ -80,8 +80,7 @@ Beacon.removeRegion(function(){
 To retrieve the list of identifiers of currently monitored regions use the Beacon getWatchedRegionIds function. No parameters.
 The result object contains an array of strings in regionids
 
-Example:
-
+<strong>Example: getWatchedRegionIds (Beacon)</strong>
 ```bash
 Beacon.getWatchedRegionIds(
                              function(result) {
@@ -95,7 +94,7 @@ Beacon.getWatchedRegionIds(
 
 To set the host for the callback url use Beacon setHost. It works only with https://
 
-Example:
+<strong>Example: setHost (Beacon)</strong>
 ```bash
 Beacon.setHost(function(success){}, function(error){}, 'myfavorito.com');
 
@@ -104,7 +103,7 @@ Beacon.setHost(function(success){}, function(error){}, 'myfavorito.com');
 
 To set the token for the callback url use Beacon setToken. It works only with https://
 
-Example:
+<strong>Example: setToken (Beacon)</strong>
 ```bash
 Beacon.setToken(function(success){}, function(error){}, 'hkja8z8klahkjh899842kljah');
 
