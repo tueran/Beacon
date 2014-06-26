@@ -100,12 +100,6 @@
     }
 }
 
-
-#pragma mark Plugin Functions
-
-
-
-
 #pragma mark - iBeacon functions
 
 -(void)addBeaconRegion:(CDVInvokedUrlCommand *)command
@@ -198,20 +192,6 @@
         NSLog(@"beaconRegion.identifier: %@", beaconRegion.identifier);
         NSLog(@"beaconRegion.description: %@", beaconRegion.description);
         
-        //NSString* beaconDesc = [beaconRegion description];
-        //NSLog(@"Daniel Desc: %@", beaconDesc);
-        //NSArray *listItems = [beaconDesc componentsSeparatedByString:@", "];
-        //NSLog(@"Log: %@", listItems);
-        
-        // NSString * newString = [beaconDesc stringByReplacingOccurrencesOfString:@"(" withString:@""];
-        // NSLog(@"%@xx",newString);
-        
-        // NSRange r = NSMakeRange(0, 15);
-        // NSString *cup = [beaconDesc substringWithRange: r];
-        // NSString *cup2 = [beaconDesc substringToIndex:30];
-        // NSLog(@"New Strings: %@", cup);
-        // NSLog(@"New Strings: %@", cup2);
-        
     }
     NSMutableDictionary* posError = [NSMutableDictionary dictionaryWithCapacity:3];
     [posError setObject: [NSNumber numberWithInt: CDVCommandStatus_OK] forKey:@"code"];
@@ -247,51 +227,51 @@
     [[BeaconHelper sharedBeaconHelper] saveBeaconCallbackId:callbackId];
     [[BeaconHelper sharedBeaconHelper] setCommandDelegate:self.commandDelegate];
     
-    /*
-     NSLog(@"isLocationServicesEnabled: %hhd", [self isLocationServicesEnabled]);
-     if (![self isLocationServicesEnabled])
-     {
-     BOOL forcePrompt = NO;
-     NSLog(@"removeRegion.forcePromt: %hhd", forcePrompt);
-     if (!forcePrompt)
-     {
-     NSLog(@"removeRegion.forcePromt: %hhd", forcePrompt);
-     [[GeofencingHelper sharedGeofencingHelper] returnGeofenceError:PERMISSIONDENIED withMessage: nil];
-     return;
-     }
-     }
-     
-     if (![self isAuthorized])
-     {
-     NSString* message = nil;
-     BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
-     if (authStatusAvailable) {
-     NSUInteger code = [CLLocationManager authorizationStatus];
-     if (code == kCLAuthorizationStatusNotDetermined) {
-     // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
-     message = @"User undecided on application's use of location services";
-     } else if (code == kCLAuthorizationStatusRestricted) {
-     message = @"application use of location services is restricted";
-     }
-     }
-     //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
-     [[GeofencingHelper sharedGeofencingHelper] returnGeofenceError:PERMISSIONDENIED withMessage: message];
-     
-     return;
-     }
-     
-     if (![self isRegionMonitoringAvailable])
-     {
-     [[GeofencingHelper sharedGeofencingHelper] returnGeofenceError:REGIONMONITORINGUNAVAILABLE withMessage: @"Region monitoring is unavailable"];
-     return;
-     }
-     
-     if (![self isRegionMonitoringEnabled])
-     {
-     [[GeofencingHelper sharedGeofencingHelper] returnGeofenceError:REGIONMONITORINGPERMISSIONDENIED withMessage: @"User has restricted the use of region monitoring"];
-     return;
-     }
-     */
+    
+    NSLog(@"isLocationServicesEnabled: %hhd", [self isLocationServicesEnabled]);
+    if (![self isLocationServicesEnabled])
+    {
+        BOOL forcePrompt = NO;
+        NSLog(@"removeRegion.forcePromt: %hhd", forcePrompt);
+        if (!forcePrompt)
+        {
+            NSLog(@"removeRegion.forcePromt: %hhd", forcePrompt);
+            [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: nil];
+            return;
+        }
+    }
+    
+    if (![self isAuthorized])
+    {
+        NSString* message = nil;
+        BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
+        if (authStatusAvailable) {
+            NSUInteger code = [CLLocationManager authorizationStatus];
+            if (code == kCLAuthorizationStatusNotDetermined) {
+                // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
+                message = @"User undecided on application's use of location services";
+            } else if (code == kCLAuthorizationStatusRestricted) {
+                message = @"application use of location services is restricted";
+            }
+        }
+        //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
+        [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: message];
+        
+        return;
+    }
+    
+    if (![self isRegionMonitoringAvailable])
+    {
+        [[BeaconHelper sharedBeaconHelper] returnBeaconError:REGIONMONITORINGUNAVAILABLE withMessage: @"Region monitoring is unavailable"];
+        return;
+    }
+    
+    if (![self isRegionMonitoringEnabled])
+    {
+        [[BeaconHelper sharedBeaconHelper] returnBeaconError:REGIONMONITORINGPERMISSIONDENIED withMessage: @"User has restricted the use of region monitoring"];
+        return;
+    }
+    
     
     NSMutableDictionary *options = [command.arguments objectAtIndex:0];
     [self removeBeaconRegionToMonitor:options];

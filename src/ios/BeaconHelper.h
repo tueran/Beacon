@@ -24,16 +24,7 @@ enum LocationStatus {
     SIGNIFICANTLOCATIONMONITORINGUNAVAILABLE
 };
 typedef NSInteger LocationStatus;
-/*
- enum LocationAccuracy {
- LocationAccuracyBestForNavigation,
- LocationAccuracyBest,
- LocationAccuracyNearestTenMeters,
- LocationAccuracyHundredMeters,
- LocationAccuracyThreeKilometers
- };
- typedef NSInteger LocationAccuracy;
- */
+
 #pragma mark - LocationData Interface
 
 @interface LocationData : NSObject
@@ -41,8 +32,6 @@ typedef NSInteger LocationStatus;
 @property (nonatomic, assign) LocationStatus locationStatus;
 @property (nonatomic, retain) CLLocation* locationInfo;
 @property (nonatomic, retain) NSMutableArray* locationCallbacks;
-//@property (nonatomic, retain) NSMutableArray* geofenceCallbacks;
-
 @property (nonatomic, retain) NSMutableArray* beaconCallbacks;
 
 
@@ -68,18 +57,11 @@ typedef NSInteger LocationStatus;
 + (NSString*) applicationDocumentsDirectory;
 
 - (void) returnLocationError: (NSUInteger) errorCode withMessage: (NSString*) message;
-//- (void) returnGeofenceError: (NSUInteger) errorCode withMessage: (NSString*) message;
 - (void) returnBeaconError: (NSUInteger) errorCode withMessage: (NSString*) message;
-
 - (void) returnRegionSuccess;
 - (void) returnLocationSuccess;
-
-//- (void) saveGeofenceCallbackId:(NSString *) callbackId;
 - (void) saveLocationCallbackId:(NSString *) callbackId;
-
-
 - (void) returnBeaconRegionSuccess;
-
 - (void) saveBeaconCallbackId:(NSString *) callbackId;
 
 
