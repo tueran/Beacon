@@ -40,7 +40,7 @@ To add a new region to be monitored use the Beacon Beacon.addRegion function. Th
     minor - int - Specifies the radius in meters of the region.
     
 
-Example: addRegion (Beacon)
+<strong>Example: addRegion (Beacon)</strong>
 ```bash
 Beacon.addRegion(function(){
                              alert('success');
