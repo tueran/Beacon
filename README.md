@@ -1,113 +1,113 @@
-# Example of Geofencing.
+# Example of Beacon.
 
 
 ## Installation
 
 - Make sure that you have [Node](http://nodejs.org/) and [PhoneGap CLI](https://github.com/mwbrooks/phonegap-cli) installed on your machine.
-- Create your PhoneGap example app
+- Create your PhoneGap/Cordova example app
 
 ```bash
-phonegap create com.siteforum.TestApp && cd $_
+phonegap create com.siteforum.beacon && cd $_
+cordova create com.siteforum.beacon && cd $_
 ```
 
 - Add the plugin to it
 
 ```bash
 phonegap local plugin add https://github.com/tueran/Geofencing.git
+cordova plugin add https://github.com/tueran/Beacon
 ```
 
 ## INCLUDED FUNTIONS
 
-Geofencing.js contains the following functions:
+Beacon.js contains the following functions:
 
     addRegion - Add a region to moitoring
     removeRegion - Remove a region from monitoring
     setHost - sets the Host form the call url from outside
     setToken - sets the user toker from outside
-    startMonitoringRegion - Starts monitoring a region.
-    stopMonitoringRegion - Clears an existing region from being monitored.
     getWatchedRegionIds - Returns a list of currently monitored region identifiers.
-    startMonitoringSignificantLocationChanges - Starts monitoring significant location changes.
-    stopMonitoringSignificantLocationChanges - Stops monitoring significant location changes.
+    
 
 
 ## PLUGIN CODE EXAMPLE
 
-To add a new region to be monitored use the Geofencing startMonitoringRegion function. The parameters are:
+To add a new region to be monitored use the Beacon Beacon.addRegion function. The parameters are:
 
-    fid - String - This is a unique identifier.
-    latitude - String - latitude of the region.
-    longitude - String - latitude of the region.
-    radius - Integer - Specifies the radius in meters of the region.
-    accuracy - Integer - Specifies the accuracy in meters.
+    bid - String - This is a unique identifier.
+    puuid - String - proximity UUID
+    major - int - latitude of the region.
+    minor - int - Specifies the radius in meters of the region.
+    
+
+Example: addRegion (Beacon)
+```bash
+Beacon.addRegion(function(){
+                             alert('success');
+                             }, function(){
+                             alert('error');
+                             }, {
+                             bid: 1234567890,
+                             puuid: 'f7826da6-4fa2-4e98-8024-bc5b71e0893e',
+                             major: 11111,
+                             minor: 23456
+                             });
+
+```
+
+To remove an existing region use the Beacon removeRegion function. The parameters are: 
+
+    bid - String - This is a unique identifier.
+    puuid - String - proximity UUID
+    major - int - latitude of the region.
+    minor - int - Specifies the radius in meters of the region.
 
 Example:
 ```bash
-var params = [location.id, location.location.lat, location.location.lng, "10", "3"];
-Geofencing.startMonitoringRegion(params, function(result) {}, function(error) {
-    alert("failed to add region");
-});
-```
-
-To remove an existing region use the Geofencing removeRegion function. The parameters are: 1. fid - String - This is a unique identifier. 2. latitude - String - latitude of the region. 3. longitude - String - latitude of the region.
-
-Example:
-```bash
-var params = [item.fid, item.latitude, item.longitude];
-Geofencing.stopMonitoringRegion(params, 
-function(result) {
-
-    // not used.
-
-}, function(error) {
-    // not used
-});
+Beacon.removeRegion(function(){
+                             alert('success');
+                             }, function(){
+                             alert('error');
+                             }, {
+                             bid: 1234567890,
+                             puuid: 'f7826da6-4fa2-4e98-8024-bc5b71e0893e',
+                             major: 11111,
+                             minor: 23456
+                             });
 ```
 
 
-To retrieve the list of identifiers of currently monitored regions use the Geofencing getWatchedRegionIds function. No parameters.
+To retrieve the list of identifiers of currently monitored regions use the Beacon getWatchedRegionIds function. No parameters.
 The result object contains an array of strings in regionids
 
 Example:
 
 ```bash
-Geofencing.getWatchedRegionIds(
-    function(result) { 
-        alert("success: " + result.regionids);                 
-    },
-    function(error) {  
-        alert("error");   
-    }
-);
+Beacon.getWatchedRegionIds(
+                             function(result) {
+                             alert("success: " + result.beaconRegionids);
+                             },
+                             function(error) {
+                             alert("error");
+                             });
+
 ```
 
-To start monitoring signifaction location changes use the Geofencing startMonitoringSignificantLocationChanges function. No parameters.
+To set the host for the callback url use Beacon setHost. It works only with https://
 
 Example:
 ```bash
-Geofencing.startMonitoringSignificantLocationChanges(
-    function(result) { 
-        console.log("Location Monitor Success: " + result);                
-    },
-    function(error) {  
-        console.log("failed to monitor location changes");   
-    }
-);
+Beacon.setHost(function(success){}, function(error){}, 'myfavorito.com');
+
 ```
 
-To start monitoring signifaction location changes use the Geofencing startMonitoringSignificantLocationChanges function. No parameters.
+
+To set the token for the callback url use Beacon setToken. It works only with https://
 
 Example:
 ```bash
-Geofencing.stopMonitoringSignificantLocationChanges(
-    function(result) { 
-        console.log("Stop Location Monitor Success: " + result);                   
-    },
-    function(error) {  
-        console.log("failed to stop monitor location changes");   
-    }
-);
-```
+Beacon.setToken(function(success){}, function(error){}, 'hkja8z8klahkjh899842kljah');
 
+```
 
 
