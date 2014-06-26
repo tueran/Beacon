@@ -22,8 +22,8 @@
          <header-file src="src/ios/BeaconHelper.h" />
          <source-file src="src/ios/BeaconHelper.m" />
 
-         <framework src="CoreLocation.framework" / >
-         <framework src="CoreBluetooth.framework" / >
+         <framework src="CoreLocation.framework" />
+         <framework src="CoreBluetooth.framework" />
 
     </platform>
 </plugin>
