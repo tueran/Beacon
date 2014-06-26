@@ -2,17 +2,17 @@
 //  BeaconHelper.h
 //  Beacon
 //
-//  Created by Daniel Mauer on 05.06.14.
+//  Created by Daniel Mauer on 26.06.14.
 //
 //
 
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
+#import <CoreBluetooth/CoreBluetooth.h>
 #import <Cordova/CDVJSON.h>
 #import <Cordova/CDVPlugin.h>
 #import <Cordova/CDV.h>
 #import <MapKit/MapKit.h>
-#import <CoreBluetooth/CoreBluetooth.h>
 
 
 enum LocationStatus {
@@ -24,16 +24,16 @@ enum LocationStatus {
     SIGNIFICANTLOCATIONMONITORINGUNAVAILABLE
 };
 typedef NSInteger LocationStatus;
-
-enum LocationAccuracy {
-    LocationAccuracyBestForNavigation,
-    LocationAccuracyBest,
-    LocationAccuracyNearestTenMeters,
-    LocationAccuracyHundredMeters,
-    LocationAccuracyThreeKilometers
-};
-typedef NSInteger LocationAccuracy;
-
+/*
+ enum LocationAccuracy {
+ LocationAccuracyBestForNavigation,
+ LocationAccuracyBest,
+ LocationAccuracyNearestTenMeters,
+ LocationAccuracyHundredMeters,
+ LocationAccuracyThreeKilometers
+ };
+ typedef NSInteger LocationAccuracy;
+ */
 #pragma mark - LocationData Interface
 
 @interface LocationData : NSObject
@@ -41,7 +41,10 @@ typedef NSInteger LocationAccuracy;
 @property (nonatomic, assign) LocationStatus locationStatus;
 @property (nonatomic, retain) CLLocation* locationInfo;
 @property (nonatomic, retain) NSMutableArray* locationCallbacks;
+//@property (nonatomic, retain) NSMutableArray* geofenceCallbacks;
+
 @property (nonatomic, retain) NSMutableArray* beaconCallbacks;
+
 
 @end
 
@@ -54,6 +57,7 @@ typedef NSInteger LocationAccuracy;
 @interface BeaconHelper : NSObject <CLLocationManagerDelegate>
 
 @property (nonatomic, retain) CLLocationManager* locationManager;
+@property (nonatomic, retain) CLBeaconRegion* beaconRegion;
 @property (nonatomic, assign) UIWebView* webView;
 @property (nonatomic, assign) BOOL didLaunchForRegionUpdate;
 @property (nonatomic, retain) LocationData* locationData;
@@ -64,12 +68,19 @@ typedef NSInteger LocationAccuracy;
 + (NSString*) applicationDocumentsDirectory;
 
 - (void) returnLocationError: (NSUInteger) errorCode withMessage: (NSString*) message;
-- (void) returnGeofenceError: (NSUInteger) errorCode withMessage: (NSString*) message;
+//- (void) returnGeofenceError: (NSUInteger) errorCode withMessage: (NSString*) message;
+- (void) returnBeaconError: (NSUInteger) errorCode withMessage: (NSString*) message;
 
 - (void) returnRegionSuccess;
 - (void) returnLocationSuccess;
 
-- (void) saveBeaconCallbackId:(NSString *) callbackId;
+//- (void) saveGeofenceCallbackId:(NSString *) callbackId;
 - (void) saveLocationCallbackId:(NSString *) callbackId;
+
+
+- (void) returnBeaconRegionSuccess;
+
+- (void) saveBeaconCallbackId:(NSString *) callbackId;
+
 
 @end

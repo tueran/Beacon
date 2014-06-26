@@ -2,7 +2,7 @@
 //  Beacon.m
 //  Beacon
 //
-//  Created by Daniel Mauer on 05.06.14.
+//  Created by Daniel Mauer on 26.06.14.
 //
 //
 
@@ -14,7 +14,7 @@
 
 
 
-#pragma mark - Beacon Implementation
+#pragma mark - Geofenfing Implementation
 
 @implementation Beacon
 
@@ -103,18 +103,24 @@
 
 #pragma mark Plugin Functions
 
--(void)addRegion:(CDVInvokedUrlCommand *)command
+
+
+
+#pragma mark - iBeacon functions
+
+-(void)addBeaconRegion:(CDVInvokedUrlCommand *)command
 {
     NSString* callbackId = command.callbackId;
     
     [[BeaconHelper sharedBeaconHelper] saveBeaconCallbackId:callbackId];
     [[BeaconHelper sharedBeaconHelper] setCommandDelegate:self.commandDelegate];
     
+    
     if (self.isLocationServicesEnabled) {
         BOOL forcePrompt = NO;
         
         if (forcePrompt) {
-            [[BeaconHelper sharedBeaconHelper] returnGeofenceError:PERMISSIONDENIED withMessage:nil];
+            [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage:nil];
             return;
         }
         
@@ -135,140 +141,189 @@
             }
         }
         //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
-        [[BeaconHelper sharedBeaconHelper] returnGeofenceError:PERMISSIONDENIED withMessage: message];
+        [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: message];
         
         return;
     }
     
     if (![self isRegionMonitoringAvailable])
     {
-        [[BeaconHelper sharedBeaconHelper] returnGeofenceError:REGIONMONITORINGUNAVAILABLE withMessage: @"Region monitoring is unavailable"];
+        [[BeaconHelper sharedBeaconHelper] returnBeaconError:REGIONMONITORINGUNAVAILABLE withMessage: @"Region monitoring is unavailable"];
         return;
     }
     
     if (![self isRegionMonitoringEnabled])
     {
-        [[BeaconHelper sharedBeaconHelper] returnGeofenceError:REGIONMONITORINGPERMISSIONDENIED withMessage: @"User has restricted the use of region monitoring"];
+        [[BeaconHelper sharedBeaconHelper] returnBeaconError:REGIONMONITORINGPERMISSIONDENIED withMessage: @"User has restricted the use of region monitoring"];
         return;
     }
     
     
     NSMutableDictionary *options = [command.arguments objectAtIndex:0];
-    
-    [self addRegionToMonitor:options];
-    [[BeaconHelper sharedBeaconHelper] returnRegionSuccess];
+    [self addBeaconRegionToMonitor:options];
+    [[BeaconHelper sharedBeaconHelper] returnBeaconRegionSuccess];
     
     NSLog(@"addRegions: options: %@", options);
 }
 
 
-- (void) addRegionToMonitor:(NSMutableDictionary *)params {
+- (void) addBeaconRegionToMonitor:(NSMutableDictionary *)params {
     // Parse Incoming Params
+    NSString *beaconId = [[params objectForKey:KEY_BEACON_ID] stringValue];
+    NSString *proximityUUID = [params objectForKey:KEY_BEACON_PUUID];
+    NSInteger majorInt = [[params objectForKey:KEY_BEACON_MAJOR] intValue];
+    NSInteger minorInt = [[params objectForKey:KEY_BEACON_MINOR] intValue];
+    NSUUID *puuid = [[NSUUID alloc] initWithUUIDString:proximityUUID];
     
-    NSString *regionId = [[params objectForKey:KEY_REGION_ID] stringValue];
-    NSString *latitude = [params objectForKey:KEY_REGION_LAT];
-    NSString *longitude = [params objectForKey:KEY_REGION_LNG];
-    double radius = [[params objectForKey:KEY_REGION_RADIUS] doubleValue];
+    CLBeaconRegion *beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:puuid major:majorInt minor:minorInt identifier:beaconId];
+    beaconRegion.notifyOnEntry = YES;
+    beaconRegion.notifyOnExit = YES;
+    beaconRegion.notifyEntryStateOnDisplay = YES;
     
-    CLLocationCoordinate2D coord = CLLocationCoordinate2DMake([latitude doubleValue], [longitude doubleValue]);
-    CLRegion *region = [[CLRegion alloc] initCircularRegionWithCenter:coord radius:radius identifier:regionId];
-    NSLog(@"Geofencing_old: Region: %@", region);
+    NSLog(@"Function: addRegion, BeaconRegion: %@", beaconRegion);
+    [[[BeaconHelper sharedBeaconHelper] locationManager] startMonitoringForRegion:beaconRegion];
     
-    [[[BeaconHelper sharedBeaconHelper] locationManager] startMonitoringForRegion:region desiredAccuracy:kCLLocationAccuracyBestForNavigation];
 }
 
 
-- (void) removeRegionToMonitor:(NSMutableDictionary *)params {
-    // Parse Incoming Params
-    //    NSString *regionId = [params objectForKey:KEY_REGION_ID];
-    NSString *regionId = [[params objectForKey:KEY_REGION_ID] stringValue];
-    NSString *latitude = [params objectForKey:KEY_REGION_LAT];
-    NSString *longitude = [params objectForKey:KEY_REGION_LNG];
+- (void)getWatchedBeaconRegionIds:(CDVInvokedUrlCommand*)command {
+    NSString* callbackId = command.callbackId;
     
-    CLLocationCoordinate2D coord = CLLocationCoordinate2DMake([latitude doubleValue], [longitude doubleValue]);
-    CLRegion *region = [[CLRegion alloc] initCircularRegionWithCenter:coord radius:10.0 identifier:regionId];
-    [[[BeaconHelper sharedBeaconHelper] locationManager] stopMonitoringForRegion:region];
+    NSSet *beaconRegions = [[BeaconHelper sharedBeaconHelper] locationManager].monitoredRegions;
+    NSLog(@"getWatchedBeaconRegionIds: %@", beaconRegions);
+    
+    NSMutableArray *watchedBeaconRegions = [NSMutableArray array];
+    for (CLRegion *beaconRegion in beaconRegions) {
+        [watchedBeaconRegions addObject:beaconRegion.identifier];
+        NSLog(@"beaconRegion.identifier: %@", beaconRegion.identifier);
+        NSLog(@"beaconRegion.description: %@", beaconRegion.description);
+        
+        //NSString* beaconDesc = [beaconRegion description];
+        //NSLog(@"Daniel Desc: %@", beaconDesc);
+        //NSArray *listItems = [beaconDesc componentsSeparatedByString:@", "];
+        //NSLog(@"Log: %@", listItems);
+        
+        // NSString * newString = [beaconDesc stringByReplacingOccurrencesOfString:@"(" withString:@""];
+        // NSLog(@"%@xx",newString);
+        
+        // NSRange r = NSMakeRange(0, 15);
+        // NSString *cup = [beaconDesc substringWithRange: r];
+        // NSString *cup2 = [beaconDesc substringToIndex:30];
+        // NSLog(@"New Strings: %@", cup);
+        // NSLog(@"New Strings: %@", cup2);
+        
+    }
+    NSMutableDictionary* posError = [NSMutableDictionary dictionaryWithCapacity:3];
+    [posError setObject: [NSNumber numberWithInt: CDVCommandStatus_OK] forKey:@"code"];
+    [posError setObject: @"BeaconRegion Success" forKey: @"message"];
+    [posError setObject: watchedBeaconRegions forKey: @"beaconRegionids"];
+    
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
+    if (callbackId) {
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }
+    
+    NSLog(@"watchedBeaconRegions: %@", watchedBeaconRegions);
+}
+
+- (void) removeBeaconRegionToMonitor:(NSMutableDictionary *)params {
+    // Parse Incoming Params
+    NSString *beaconId = [[params objectForKey:KEY_BEACON_ID] stringValue];
+    NSString *proximityUUID = [params objectForKey:KEY_BEACON_PUUID];
+    NSInteger majorInt = [[params objectForKey:KEY_BEACON_MAJOR] intValue];
+    NSInteger minorInt = [[params objectForKey:KEY_BEACON_MINOR] intValue];
+    NSUUID *puuid = [[NSUUID alloc] initWithUUIDString:proximityUUID];
+    
+    CLBeaconRegion *beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:puuid major:majorInt minor:minorInt identifier:beaconId];
+    [[[BeaconHelper sharedBeaconHelper] locationManager] stopMonitoringForRegion:beaconRegion];
 }
 
 
-- (void)removeRegion:(CDVInvokedUrlCommand*)command {
+- (void)removeBeaconRegion:(CDVInvokedUrlCommand*)command {
     
     NSString* callbackId = command.callbackId;
-    NSLog(@"removeRegion.callbackId: %@", callbackId);
-    NSLog(@"removeRegion.command.arguments: %@", command.arguments);
+    NSLog(@"removeBeaconRegion.callbackId: %@", callbackId);
+    NSLog(@"removeBeaconRegion.command.arguments: %@", command.arguments);
     [[BeaconHelper sharedBeaconHelper] saveBeaconCallbackId:callbackId];
     [[BeaconHelper sharedBeaconHelper] setCommandDelegate:self.commandDelegate];
     
-    
-    NSLog(@"isLocationServicesEnabled: %hhd", [self isLocationServicesEnabled]);
-    if (![self isLocationServicesEnabled])
-    {
-        BOOL forcePrompt = NO;
-        NSLog(@"removeRegion.forcePromt: %hhd", forcePrompt);
-        if (!forcePrompt)
-        {
-            NSLog(@"removeRegion.forcePromt: %hhd", forcePrompt);
-            [[BeaconHelper sharedBeaconHelper] returnGeofenceError:PERMISSIONDENIED withMessage: nil];
-            return;
-        }
-    }
-    
-    if (![self isAuthorized])
-    {
-        NSString* message = nil;
-        BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
-        if (authStatusAvailable) {
-            NSUInteger code = [CLLocationManager authorizationStatus];
-            if (code == kCLAuthorizationStatusNotDetermined) {
-                // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
-                message = @"User undecided on application's use of location services";
-            } else if (code == kCLAuthorizationStatusRestricted) {
-                message = @"application use of location services is restricted";
-            }
-        }
-        //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
-        [[BeaconHelper sharedBeaconHelper] returnGeofenceError:PERMISSIONDENIED withMessage: message];
-        
-        return;
-    }
-    
-    if (![self isRegionMonitoringAvailable])
-    {
-        [[BeaconHelper sharedBeaconHelper] returnGeofenceError:REGIONMONITORINGUNAVAILABLE withMessage: @"Region monitoring is unavailable"];
-        return;
-    }
-    
-    if (![self isRegionMonitoringEnabled])
-    {
-        [[BeaconHelper sharedBeaconHelper] returnGeofenceError:REGIONMONITORINGPERMISSIONDENIED withMessage: @"User has restricted the use of region monitoring"];
-        return;
-    }
+    /*
+     NSLog(@"isLocationServicesEnabled: %hhd", [self isLocationServicesEnabled]);
+     if (![self isLocationServicesEnabled])
+     {
+     BOOL forcePrompt = NO;
+     NSLog(@"removeRegion.forcePromt: %hhd", forcePrompt);
+     if (!forcePrompt)
+     {
+     NSLog(@"removeRegion.forcePromt: %hhd", forcePrompt);
+     [[GeofencingHelper sharedGeofencingHelper] returnGeofenceError:PERMISSIONDENIED withMessage: nil];
+     return;
+     }
+     }
+     
+     if (![self isAuthorized])
+     {
+     NSString* message = nil;
+     BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
+     if (authStatusAvailable) {
+     NSUInteger code = [CLLocationManager authorizationStatus];
+     if (code == kCLAuthorizationStatusNotDetermined) {
+     // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
+     message = @"User undecided on application's use of location services";
+     } else if (code == kCLAuthorizationStatusRestricted) {
+     message = @"application use of location services is restricted";
+     }
+     }
+     //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
+     [[GeofencingHelper sharedGeofencingHelper] returnGeofenceError:PERMISSIONDENIED withMessage: message];
+     
+     return;
+     }
+     
+     if (![self isRegionMonitoringAvailable])
+     {
+     [[GeofencingHelper sharedGeofencingHelper] returnGeofenceError:REGIONMONITORINGUNAVAILABLE withMessage: @"Region monitoring is unavailable"];
+     return;
+     }
+     
+     if (![self isRegionMonitoringEnabled])
+     {
+     [[GeofencingHelper sharedGeofencingHelper] returnGeofenceError:REGIONMONITORINGPERMISSIONDENIED withMessage: @"User has restricted the use of region monitoring"];
+     return;
+     }
+     */
     
     NSMutableDictionary *options = [command.arguments objectAtIndex:0];
-    [self removeRegionToMonitor:options];
+    [self removeBeaconRegionToMonitor:options];
     
-    [[BeaconHelper sharedBeaconHelper] returnRegionSuccess];
+    [[BeaconHelper sharedBeaconHelper] returnBeaconRegionSuccess];
 }
 
 
 -(void)setHost:(CDVInvokedUrlCommand*)command
 {
     NSString* callbackId = command.callbackId;
-    NSString* host = [command.arguments objectAtIndex:0];
+    NSString* beaconHost = [command.arguments objectAtIndex:0];
+    NSLog(@"Parameter: %@", command.arguments);
+    NSLog(@"Host: %@", beaconHost);
     
     // Save the host into ne nsuserdefaults
     NSUserDefaults *preferences = [NSUserDefaults standardUserDefaults];
-    [preferences setObject:host forKey:@"GeofencingHost"];
+    [preferences setObject:beaconHost forKey:@"BeaconHost"];
     [preferences synchronize]; //at the end of storage
     
-    // Load the storage data from nsuserdefaults
-    //NSString *getHost = [preferences stringForKey:@"GeofencingHost"];
-    //NSLog(@"nsuserdefaults Ausgabe: %@", getHost);
-    
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"%@", host]];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"%@", beaconHost]];
     if (callbackId) {
         [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
     }
+    
+    
+    NSUserDefaults *getBeaconPreferences = [NSUserDefaults standardUserDefaults];
+    NSString *getBeaconHost = [getBeaconPreferences objectForKey:@"BeaconHost"];
+    NSLog(@"getBeaconHost - objectForKey: %@", getBeaconHost);
+    
+    NSString *savedHost = (NSString *)[[NSUserDefaults standardUserDefaults] objectForKey:@"BeaconHost"];
+    NSLog(@"savedHost: %@", savedHost);
 }
 
 
@@ -277,14 +332,11 @@
     NSString* callbackId = command.callbackId;
     NSString* token = [command.arguments objectAtIndex:0];
     
+    
     // Save the host into ne nsuserdefaults
     NSUserDefaults *preferences = [NSUserDefaults standardUserDefaults];
-    [preferences setObject:token forKey:@"Usertoken"];
+    [preferences setObject:token forKey:@"BeaconUsertoken"];
     [preferences synchronize]; //at the end of storage
-    
-    // Load the storage data from nsuserdefaults
-    //NSString *getUsertoken = [preferences stringForKey:@"Usertoken"];
-    //NSLog(@"nsuserdefaults Ausgabe: %@", getUsertoken);
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"%@", token]];
     if (callbackId) {
@@ -292,159 +344,5 @@
     }
 }
 
-
-
-- (void)getWatchedRegionIds:(CDVInvokedUrlCommand*)command {
-    NSString* callbackId = command.callbackId;
-    
-    NSSet *regions = [[BeaconHelper sharedBeaconHelper] locationManager].monitoredRegions;
-    NSLog(@"Regions 111: %@", regions);
-    NSLog(@"getWatchedRegionIds.regions: %@", regions);
-    NSMutableArray *watchedRegions = [NSMutableArray array];
-    for (CLRegion *region in regions) {
-        [watchedRegions addObject:region.identifier];
-        NSLog(@"region.identifier: %@", region.identifier);
-    }
-    NSMutableDictionary* posError = [NSMutableDictionary dictionaryWithCapacity:3];
-    [posError setObject: [NSNumber numberWithInt: CDVCommandStatus_OK] forKey:@"code"];
-    [posError setObject: @"Region Success" forKey: @"message"];
-    [posError setObject: watchedRegions forKey: @"regionids"];
-    
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
-    if (callbackId) {
-        //        [self writeJavascript:[result toSuccessCallbackString:callbackId]];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    }
-    
-    
-    
-    NSLog(@"watchedRegions: %@", watchedRegions);
-}
-
-
-- (void) startMonitoringSignificantLocationChanges:(CDVInvokedUrlCommand*)command {
-    
-    NSString* callbackId = command.callbackId;
-    NSLog(@"MonitoringSignificationChanges: %@", command.arguments);
-    
-    [[BeaconHelper sharedBeaconHelper] saveLocationCallbackId:callbackId];
-    [[BeaconHelper sharedBeaconHelper] setCommandDelegate:self.commandDelegate];
-    
-    NSLog(@"isLocationServicesEnabled %hhd", [self isLocationServicesEnabled]);
-    if (![self isLocationServicesEnabled])
-    {
-        BOOL forcePrompt = NO;
-        if (!forcePrompt)
-        {
-            [[BeaconHelper sharedBeaconHelper] returnLocationError:PERMISSIONDENIED withMessage: nil];
-            return;
-        }
-    }
-    
-    NSLog(@"isAuthorized %hhd", [self isAuthorized]);
-    if (![self isAuthorized])
-    {
-        NSString* message = nil;
-        BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
-        if (authStatusAvailable) {
-            NSUInteger code = [CLLocationManager authorizationStatus];
-            if (code == kCLAuthorizationStatusNotDetermined) {
-                // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
-                message = @"User undecided on application's use of location services";
-            } else if (code == kCLAuthorizationStatusRestricted) {
-                message = @"application use of location services is restricted";
-            }
-        }
-        //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
-        [[BeaconHelper sharedBeaconHelper] returnLocationError:PERMISSIONDENIED withMessage: message];
-        
-        return;
-    }
-    
-    NSLog(@"isSignificantLocationChangeMonitoringAvailable: %hhd", [self isSignificantLocationChangeMonitoringAvailable]);
-    if (![self isSignificantLocationChangeMonitoringAvailable])
-    {
-        [[BeaconHelper sharedBeaconHelper] returnLocationError:SIGNIFICANTLOCATIONMONITORINGUNAVAILABLE withMessage: @"Significant location monitoring is unavailable"];
-        return;
-    }
-    
-    [[[BeaconHelper sharedBeaconHelper] locationManager] startMonitoringSignificantLocationChanges];
-    NSLog(@"------ ENDE -----");
-}
-
-
-- (void) stopMonitoringSignificantLocationChanges:(CDVInvokedUrlCommand*)command {
-    NSString* callbackId = command.callbackId;
-    
-    [[BeaconHelper sharedBeaconHelper] saveLocationCallbackId:callbackId];
-    [[BeaconHelper sharedBeaconHelper] setCommandDelegate:self.commandDelegate];
-    
-    if (![self isLocationServicesEnabled])
-    {
-        BOOL forcePrompt = NO;
-        if (!forcePrompt)
-        {
-            [[BeaconHelper sharedBeaconHelper] returnLocationError:PERMISSIONDENIED withMessage: nil];
-            return;
-        }
-    }
-    
-    if (![self isAuthorized])
-    {
-        NSString* message = nil;
-        BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
-        if (authStatusAvailable) {
-            NSUInteger code = [CLLocationManager authorizationStatus];
-            if (code == kCLAuthorizationStatusNotDetermined) {
-                // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
-                message = @"User undecided on application's use of location services";
-            } else if (code == kCLAuthorizationStatusRestricted) {
-                message = @"application use of location services is restricted";
-            }
-        }
-        //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
-        [[BeaconHelper sharedBeaconHelper] returnLocationError:PERMISSIONDENIED withMessage: message];
-        
-        return;
-    }
-    
-    if (![self isSignificantLocationChangeMonitoringAvailable])
-    {
-        [[BeaconHelper sharedBeaconHelper] returnLocationError:SIGNIFICANTLOCATIONMONITORINGUNAVAILABLE withMessage: @"Significant location monitoring is unavailable"];
-        return;
-    }
-    
-    [[[BeaconHelper sharedBeaconHelper] locationManager] stopMonitoringSignificantLocationChanges];
-    [[BeaconHelper sharedBeaconHelper] returnLocationSuccess];
-}
-
-- (void) getPendingRegionUpdates:(CDVInvokedUrlCommand*)command {
-    NSString* callbackId = command.callbackId;
-    
-    NSString *path = [BeaconHelper applicationDocumentsDirectory];
-    NSString *finalPath = [path stringByAppendingPathComponent:@"notifications.txt"];
-    NSMutableArray *updates = [NSMutableArray arrayWithContentsOfFile:finalPath];
-    
-    if (updates) {
-        NSError *error;
-        [[NSFileManager defaultManager] removeItemAtPath:finalPath error:&error];
-    } else {
-        updates = [NSMutableArray array];
-    }
-    
-    NSMutableDictionary* posError = [NSMutableDictionary dictionaryWithCapacity:3];
-    [posError setObject: [NSNumber numberWithInt: CDVCommandStatus_OK] forKey:@"code"];
-    [posError setObject: @"Region Success" forKey: @"message"];
-    [posError setObject: updates forKey: @"pendingupdates"];
-    
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
-    if (callbackId) {
-        //[self writeJavascript:[result toSuccessCallbackString:callbackId]];
-        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
-    
-    
-    NSLog(@"pendingupdates: %@", updates);
-}
 
 @end
