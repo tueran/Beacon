@@ -31,13 +31,13 @@
 - (BOOL) isRegionMonitoringEnabled;
 - (BOOL) isSignificantLocationChangeMonitoringAvailable;
 
-- (void) addBeaconRegionToMonitor:(NSMutableDictionary *)params;
-- (void) removeBeaconRegionToMonitor:(NSMutableDictionary *)params;
+- (void) addBeaconToMonitor:(NSMutableDictionary *)params;
+- (void) removeBeaconToMonitor:(NSMutableDictionary *)params;
 
 #pragma mark Plugin Functions
-- (void) addBeaconRegion:(CDVInvokedUrlCommand*)command;
-- (void) removeBeaconRegion:(CDVInvokedUrlCommand*)command;
-- (void) getWatchedBeaconRegionIds:(CDVInvokedUrlCommand*)command;
+- (void) addBeacon:(CDVInvokedUrlCommand*)command;
+- (void) removeBeacon:(CDVInvokedUrlCommand*)command;
+- (void) getWatchedBeaconIds:(CDVInvokedUrlCommand*)command;
 - (void) setHost:(CDVInvokedUrlCommand*)command;
 - (void) setToken:(CDVInvokedUrlCommand*)command;
 

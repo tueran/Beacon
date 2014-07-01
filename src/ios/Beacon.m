@@ -102,7 +102,7 @@
 
 #pragma mark - iBeacon functions
 
--(void)addBeaconRegion:(CDVInvokedUrlCommand *)command
+-(void)addBeacon:(CDVInvokedUrlCommand *)command
 {
     NSString* callbackId = command.callbackId;
     
@@ -154,14 +154,14 @@
     
     
     NSMutableDictionary *options = [command.arguments objectAtIndex:0];
-    [self addBeaconRegionToMonitor:options];
+    [self addBeaconToMonitor:options];
     [[BeaconHelper sharedBeaconHelper] returnBeaconRegionSuccess];
     
     NSLog(@"addRegions: options: %@", options);
 }
 
 
-- (void) addBeaconRegionToMonitor:(NSMutableDictionary *)params {
+- (void) addBeaconToMonitor:(NSMutableDictionary *)params {
     // Parse Incoming Params
     NSString *beaconId = [[params objectForKey:KEY_BEACON_ID] stringValue];
     NSString *proximityUUID = [params objectForKey:KEY_BEACON_PUUID];
@@ -180,17 +180,42 @@
 }
 
 
-- (void)getWatchedBeaconRegionIds:(CDVInvokedUrlCommand*)command {
+- (void)getWatchedBeaconIds:(CDVInvokedUrlCommand*)command {
     NSString* callbackId = command.callbackId;
+    //NSLog(@"getWatchedBeaconRegionIds: callbackId: %@", callbackId);
     
     NSSet *beaconRegions = [[BeaconHelper sharedBeaconHelper] locationManager].monitoredRegions;
-    NSLog(@"getWatchedBeaconRegionIds: %@", beaconRegions);
+    //NSLog(@"getWatchedBeaconRegionIds: %@", beaconRegions);
+    
+    /*
+     *      T E S T - O R D E R E D  N S S E T
+     */
+    
+    NSMutableArray* beaconRegionArray = [[NSMutableArray alloc] init];
+    
+    for (id region in beaconRegions.allObjects) {
+        if ([region isKindOfClass:[CLCircularRegion class]]) {
+            //NSLog(@"hier ist eine Geofencing Region");
+            // Abfragen auf circular-Properties die Du suchst....
+        } else if ([region isKindOfClass:[CLBeaconRegion class]]) {
+            //NSLog(@"hier ist eine Beacon Region");
+            // Abfragen auf beacon-Properties die Su suchst...
+            [beaconRegionArray addObject:region];
+        }
+    }
+    
+    NSLog(@"Mein neues Array nur mit Beacons: %@", beaconRegionArray);
+    
+    
+    /*
+     *          E N D E
+     */
     
     NSMutableArray *watchedBeaconRegions = [NSMutableArray array];
-    for (CLRegion *beaconRegion in beaconRegions) {
+    for (CLRegion *beaconRegion in beaconRegionArray) {
         [watchedBeaconRegions addObject:beaconRegion.identifier];
-        NSLog(@"beaconRegion.identifier: %@", beaconRegion.identifier);
-        NSLog(@"beaconRegion.description: %@", beaconRegion.description);
+        //NSLog(@"beaconRegion.identifier: %@", beaconRegion.identifier);
+        //NSLog(@"beaconRegion.description: %@", beaconRegion.description);
         
     }
     NSMutableDictionary* posError = [NSMutableDictionary dictionaryWithCapacity:3];
@@ -201,12 +226,13 @@
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
     if (callbackId) {
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        //NSLog(@"posError: %@", posError);
     }
     
     NSLog(@"watchedBeaconRegions: %@", watchedBeaconRegions);
 }
 
-- (void) removeBeaconRegionToMonitor:(NSMutableDictionary *)params {
+- (void) removeBeaconToMonitor:(NSMutableDictionary *)params {
     // Parse Incoming Params
     NSString *beaconId = [[params objectForKey:KEY_BEACON_ID] stringValue];
     NSString *proximityUUID = [params objectForKey:KEY_BEACON_PUUID];
@@ -219,7 +245,7 @@
 }
 
 
-- (void)removeBeaconRegion:(CDVInvokedUrlCommand*)command {
+- (void)removeBeacon:(CDVInvokedUrlCommand*)command {
     
     NSString* callbackId = command.callbackId;
     NSLog(@"removeBeaconRegion.callbackId: %@", callbackId);
@@ -274,7 +300,7 @@
     
     
     NSMutableDictionary *options = [command.arguments objectAtIndex:0];
-    [self removeBeaconRegionToMonitor:options];
+    [self removeBeaconToMonitor:options];
     
     [[BeaconHelper sharedBeaconHelper] returnBeaconRegionSuccess];
 }

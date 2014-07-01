@@ -15,7 +15,7 @@
 #import <MapKit/MapKit.h>
 
 
-enum LocationStatus {
+enum BeaconLocationStatus {
     PERMISSIONDENIED = 1,
     POSITIONUNAVAILABLE,
     TIMEOUT,
@@ -23,15 +23,15 @@ enum LocationStatus {
     REGIONMONITORINGUNAVAILABLE,
     SIGNIFICANTLOCATIONMONITORINGUNAVAILABLE
 };
-typedef NSInteger LocationStatus;
+typedef NSInteger BeaconLocationStatus;
 
 #pragma mark - LocationData Interface
 
-@interface LocationData : NSObject
+@interface BeaconLocationData : NSObject
 
-@property (nonatomic, assign) LocationStatus locationStatus;
-@property (nonatomic, retain) CLLocation* locationInfo;
-@property (nonatomic, retain) NSMutableArray* locationCallbacks;
+@property (nonatomic, assign) BeaconLocationStatus beaconLocationStatus;
+@property (nonatomic, retain) CLLocation* beaconLocationInfo;
+@property (nonatomic, retain) NSMutableArray* beaconLocationCallbacks;
 @property (nonatomic, retain) NSMutableArray* beaconCallbacks;
 
 
@@ -49,7 +49,7 @@ typedef NSInteger LocationStatus;
 @property (nonatomic, retain) CLBeaconRegion* beaconRegion;
 @property (nonatomic, assign) UIWebView* webView;
 @property (nonatomic, assign) BOOL didLaunchForRegionUpdate;
-@property (nonatomic, retain) LocationData* locationData;
+@property (nonatomic, retain) BeaconLocationData* beaconLocationData;
 @property (nonatomic, assign) id <CDVCommandDelegate> commandDelegate;
 
 +(BeaconHelper*)sharedBeaconHelper;

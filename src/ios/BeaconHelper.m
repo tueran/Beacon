@@ -13,19 +13,19 @@ static BeaconHelper *sharedBeaconHelper = nil;
 
 #pragma mark - LocationData Implementation
 
-@implementation LocationData
+@implementation BeaconLocationData
 
-@synthesize locationStatus, locationInfo;
-@synthesize locationCallbacks;
+@synthesize beaconLocationStatus, beaconLocationInfo;
+@synthesize beaconLocationCallbacks;
 //@synthesize geofenceCallbacks;
 
 @synthesize beaconCallbacks;
 
--(LocationData*) init
+-(BeaconLocationData*) init
 {
-    self = (LocationData*)[super init];
+    self = (BeaconLocationData*)[super init];
     if (self) {
-        self.locationInfo = nil;
+        self.beaconLocationInfo = nil;
     }
     return self;
 }
@@ -41,7 +41,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
 @synthesize webView;
 @synthesize locationManager;
 @synthesize beaconRegion;
-@synthesize locationData;
+@synthesize beaconLocationData;
 @synthesize didLaunchForRegionUpdate;
 @synthesize commandDelegate;
 
@@ -49,17 +49,17 @@ static BeaconHelper *sharedBeaconHelper = nil;
 
 -(void)saveLocationCallbackId:(NSString *)callbackId
 {
-    if (!self.locationData) {
-        self.locationData = [[LocationData alloc] init];
+    if (!self.beaconLocationData) {
+        self.beaconLocationData = [[BeaconLocationData alloc] init];
     }
     
-    LocationData* lData = self.locationData;
-    if (!lData.locationCallbacks) {
-        lData.locationCallbacks = [NSMutableArray array];
+    BeaconLocationData* lData = self.beaconLocationData;
+    if (!lData.beaconLocationCallbacks) {
+        lData.beaconLocationCallbacks = [NSMutableArray array];
     }
     
     // add the callbackId into the array so we cann call back when get data
-    [lData.locationCallbacks enqueue:callbackId];
+    [lData.beaconLocationCallbacks enqueue:callbackId];
 }
 
 
@@ -72,12 +72,12 @@ static BeaconHelper *sharedBeaconHelper = nil;
     [posError setObject: region.identifier forKey: @"regionid"];
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:posError];
-    for (NSString *callbackId in self.locationData.beaconCallbacks) {
+    for (NSString *callbackId in self.beaconLocationData.beaconCallbacks) {
         if (callbackId) {
             [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
         }
     }
-    self.locationData.beaconCallbacks = [NSMutableArray array];
+    self.beaconLocationData.beaconCallbacks = [NSMutableArray array];
 }
 
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error{
@@ -85,12 +85,12 @@ static BeaconHelper *sharedBeaconHelper = nil;
     [posError setObject: [NSNumber numberWithInt: error.code] forKey:@"code"];
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:posError];
-    for (NSString *callbackId in self.locationData.locationCallbacks) {
+    for (NSString *callbackId in self.beaconLocationData.beaconLocationCallbacks) {
         if (callbackId) {
             [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
         }
     }
-    self.locationData.locationCallbacks = [NSMutableArray array];
+    self.beaconLocationData.beaconLocationCallbacks = [NSMutableArray array];
 }
 
 - (void) returnRegionSuccess; {
@@ -100,12 +100,12 @@ static BeaconHelper *sharedBeaconHelper = nil;
     
     
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
-    for (NSString *callbackId in self.locationData.beaconCallbacks) {
+    for (NSString *callbackId in self.beaconLocationData.beaconCallbacks) {
         if (callbackId) {
             [self.commandDelegate sendPluginResult:result callbackId:callbackId];
         }
     }
-    self.locationData.beaconCallbacks = [NSMutableArray array];
+    self.beaconLocationData.beaconCallbacks = [NSMutableArray array];
 }
 
 
@@ -115,14 +115,14 @@ static BeaconHelper *sharedBeaconHelper = nil;
     [posError setObject: @"Region Success" forKey: @"message"];
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
-    for (NSString* callbackId in self.locationData.locationCallbacks) {
+    for (NSString* callbackId in self.beaconLocationData.beaconLocationCallbacks) {
         if (callbackId) {
             [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
         }
     }
     
     
-    self.locationData.locationCallbacks = [NSMutableArray array];
+    self.beaconLocationData.beaconLocationCallbacks = [NSMutableArray array];
 }
 
 
@@ -133,13 +133,13 @@ static BeaconHelper *sharedBeaconHelper = nil;
     [posError setObject: message ? message : @"" forKey: @"message"];
     
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
-    for (NSString *callbackId in self.locationData.locationCallbacks) {
+    for (NSString *callbackId in self.beaconLocationData.beaconLocationCallbacks) {
         if (callbackId) {
             [self.commandDelegate sendPluginResult:result callbackId:callbackId];
         }
     }
     
-    self.locationData.locationCallbacks = [NSMutableArray array];
+    self.beaconLocationData.beaconLocationCallbacks = [NSMutableArray array];
 }
 
 - (void) returnBeaconError: (NSUInteger) errorCode withMessage: (NSString*) message
@@ -149,12 +149,12 @@ static BeaconHelper *sharedBeaconHelper = nil;
     [posError setObject: message ? message : @"" forKey: @"message"];
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:posError];
-    for (NSString *callbackId in self.locationData.beaconCallbacks) {
+    for (NSString *callbackId in self.beaconLocationData.beaconCallbacks) {
         if (callbackId) {
             [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
         }
     }
-    self.locationData.beaconCallbacks = [NSMutableArray array];
+    self.beaconLocationData.beaconCallbacks = [NSMutableArray array];
 }
 
 - (id) init {
@@ -162,7 +162,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
     if (self) {
         self.locationManager = [[CLLocationManager alloc] init];
         self.locationManager.delegate = self; // Tells the location manager to send updates to this object
-        self.locationData = nil;
+        self.beaconLocationData = nil;
         
     }
     return self;
@@ -195,11 +195,11 @@ static BeaconHelper *sharedBeaconHelper = nil;
 
 -(void)saveBeaconCallbackId:(NSString *)callbackId
 {
-    if (!self.locationData) {
-        self.locationData = [[LocationData alloc] init];
+    if (!self.beaconLocationData) {
+        self.beaconLocationData = [[BeaconLocationData alloc] init];
     }
     
-    LocationData* lData = self.locationData;
+    BeaconLocationData* lData = self.beaconLocationData;
     if (!lData.beaconCallbacks) {
         lData.beaconCallbacks = [NSMutableArray array];
     }
@@ -216,12 +216,12 @@ static BeaconHelper *sharedBeaconHelper = nil;
     
     
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
-    for (NSString *callbackId in self.locationData.beaconCallbacks) {
+    for (NSString *callbackId in self.beaconLocationData.beaconCallbacks) {
         if (callbackId) {
             [self.commandDelegate sendPluginResult:result callbackId:callbackId];
         }
     }
-    self.locationData.beaconCallbacks = [NSMutableArray array];
+    self.beaconLocationData.beaconCallbacks = [NSMutableArray array];
 }
 
 
@@ -385,27 +385,27 @@ static BeaconHelper *sharedBeaconHelper = nil;
             NSDate *dateNow = [NSDate date];
             switch ([dateNow compare:savedDate]){
                 case NSOrderedAscending:
-                NSLog(@"NSOrderedAscending");
-                NSLog(@"Time is into the future");
-                
-                break;
+                    NSLog(@"NSOrderedAscending");
+                    NSLog(@"Time is into the future");
+                    
+                    break;
                 case NSOrderedSame:
-                NSLog(@"NSOrderedSame");
-                break;
+                    NSLog(@"NSOrderedSame");
+                    break;
                 case NSOrderedDescending:
-                NSLog(@"NSOrderedDescending");
-                NSLog(@"Date is in past");
-                
-                NSDate *dateNow = [NSDate date];
-                NSDate *dateToSave = [dateNow dateByAddingTimeInterval:300];
-                // Save the timer into ne nsuserdefaults
-                NSUserDefaults *setBeaconTimers = [NSUserDefaults standardUserDefaults];
-                [setBeaconTimers setObject:dateToSave forKey:[NSString stringWithFormat:@"beaconTimer%@_%@", region.identifier, [self stringForProximity:beacon.proximity]]];
-                [setBeaconTimers synchronize]; //at the end of storage
-                
-                enqueueBlock();
-                
-                break;
+                    NSLog(@"NSOrderedDescending");
+                    NSLog(@"Date is in past");
+                    
+                    NSDate *dateNow = [NSDate date];
+                    NSDate *dateToSave = [dateNow dateByAddingTimeInterval:300];
+                    // Save the timer into ne nsuserdefaults
+                    NSUserDefaults *setBeaconTimers = [NSUserDefaults standardUserDefaults];
+                    [setBeaconTimers setObject:dateToSave forKey:[NSString stringWithFormat:@"beaconTimer%@_%@", region.identifier, [self stringForProximity:beacon.proximity]]];
+                    [setBeaconTimers synchronize]; //at the end of storage
+                    
+                    enqueueBlock();
+                    
+                    break;
             }
             
             
@@ -474,28 +474,28 @@ static BeaconHelper *sharedBeaconHelper = nil;
             NSDate *dateNow = [NSDate date];
             switch ([dateNow compare:savedDate]){
                 case NSOrderedAscending:
-                NSLog(@"NSOrderedAscending");
-                NSLog(@"Time is into the future");
-                
-                
-                break;
+                    NSLog(@"NSOrderedAscending");
+                    NSLog(@"Time is into the future");
+                    
+                    
+                    break;
                 case NSOrderedSame:
-                NSLog(@"NSOrderedSame");
-                break;
+                    NSLog(@"NSOrderedSame");
+                    break;
                 case NSOrderedDescending:
-                NSLog(@"NSOrderedDescending");
-                NSLog(@"Date is in past");
-                
-                NSDate *dateNow = [NSDate date];
-                NSDate *dateToSave = [dateNow dateByAddingTimeInterval:300];
-                // Save the timer into ne nsuserdefaults
-                NSUserDefaults *setBeaconTimers = [NSUserDefaults standardUserDefaults];
-                [setBeaconTimers setObject:dateToSave forKey:[NSString stringWithFormat:@"beaconTimer%@_%@", region.identifier, [self stringForProximity:beacon.proximity]]];
-                [setBeaconTimers synchronize]; //at the end of storage
-                
-                enqueueBlock();
-                
-                break;
+                    NSLog(@"NSOrderedDescending");
+                    NSLog(@"Date is in past");
+                    
+                    NSDate *dateNow = [NSDate date];
+                    NSDate *dateToSave = [dateNow dateByAddingTimeInterval:300];
+                    // Save the timer into ne nsuserdefaults
+                    NSUserDefaults *setBeaconTimers = [NSUserDefaults standardUserDefaults];
+                    [setBeaconTimers setObject:dateToSave forKey:[NSString stringWithFormat:@"beaconTimer%@_%@", region.identifier, [self stringForProximity:beacon.proximity]]];
+                    [setBeaconTimers synchronize]; //at the end of storage
+                    
+                    enqueueBlock();
+                    
+                    break;
             }
             
             
@@ -560,28 +560,28 @@ static BeaconHelper *sharedBeaconHelper = nil;
             NSDate *dateNow = [NSDate date];
             switch ([dateNow compare:savedDate]){
                 case NSOrderedAscending:
-                NSLog(@"NSOrderedAscending");
-                NSLog(@"Time is into the future");
-                
-                
-                break;
+                    NSLog(@"NSOrderedAscending");
+                    NSLog(@"Time is into the future");
+                    
+                    
+                    break;
                 case NSOrderedSame:
-                NSLog(@"NSOrderedSame");
-                break;
+                    NSLog(@"NSOrderedSame");
+                    break;
                 case NSOrderedDescending:
-                NSLog(@"NSOrderedDescending");
-                NSLog(@"Date is in past");
-                
-                NSDate *dateNow = [NSDate date];
-                NSDate *dateToSave = [dateNow dateByAddingTimeInterval:300];
-                // Save the timer into ne nsuserdefaults
-                NSUserDefaults *setBeaconTimers = [NSUserDefaults standardUserDefaults];
-                [setBeaconTimers setObject:dateToSave forKey:[NSString stringWithFormat:@"beaconTimer%@_%@", region.identifier, [self stringForProximity:beacon.proximity]]];
-                [setBeaconTimers synchronize]; //at the end of storage
-                
-                enqueueBlock();
-                
-                break;
+                    NSLog(@"NSOrderedDescending");
+                    NSLog(@"Date is in past");
+                    
+                    NSDate *dateNow = [NSDate date];
+                    NSDate *dateToSave = [dateNow dateByAddingTimeInterval:300];
+                    // Save the timer into ne nsuserdefaults
+                    NSUserDefaults *setBeaconTimers = [NSUserDefaults standardUserDefaults];
+                    [setBeaconTimers setObject:dateToSave forKey:[NSString stringWithFormat:@"beaconTimer%@_%@", region.identifier, [self stringForProximity:beacon.proximity]]];
+                    [setBeaconTimers synchronize]; //at the end of storage
+                    
+                    enqueueBlock();
+                    
+                    break;
             }
             
             
@@ -663,28 +663,28 @@ static BeaconHelper *sharedBeaconHelper = nil;
             // compare current date and saved date
             switch ([dateNow compare:savedDate]){
                 case NSOrderedAscending:
-                NSLog(@"NSOrderedAscending");
-                NSLog(@"Time is into the future");
-                
-                
-                break;
+                    NSLog(@"NSOrderedAscending");
+                    NSLog(@"Time is into the future");
+                    
+                    
+                    break;
                 case NSOrderedSame:
-                NSLog(@"NSOrderedSame");
-                break;
+                    NSLog(@"NSOrderedSame");
+                    break;
                 case NSOrderedDescending:
-                NSLog(@"NSOrderedDescending");
-                NSLog(@"Date is in past");
-                
-                NSDate *dateNow = [NSDate date];
-                NSDate *dateToSave = [dateNow dateByAddingTimeInterval:300];
-                // Save the timer into ne nsuserdefaults
-                NSUserDefaults *setBeaconTimers = [NSUserDefaults standardUserDefaults];
-                [setBeaconTimers setObject:dateToSave forKey:[NSString stringWithFormat:@"beaconTimer%@_%@", region.identifier, [self stringForProximity:beacon.proximity]]];
-                [setBeaconTimers synchronize]; //at the end of storage
-                
-                enqueueBlock();
-                
-                break;
+                    NSLog(@"NSOrderedDescending");
+                    NSLog(@"Date is in past");
+                    
+                    NSDate *dateNow = [NSDate date];
+                    NSDate *dateToSave = [dateNow dateByAddingTimeInterval:300];
+                    // Save the timer into ne nsuserdefaults
+                    NSUserDefaults *setBeaconTimers = [NSUserDefaults standardUserDefaults];
+                    [setBeaconTimers setObject:dateToSave forKey:[NSString stringWithFormat:@"beaconTimer%@_%@", region.identifier, [self stringForProximity:beacon.proximity]]];
+                    [setBeaconTimers synchronize]; //at the end of storage
+                    
+                    enqueueBlock();
+                    
+                    break;
             }
             
             
@@ -712,7 +712,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
         case CLProximityNear:       return @"Near";
         case CLProximityImmediate:  return @"Immediate";
         default:
-        return nil;
+            return nil;
     }
 }
 
