@@ -6,12 +6,12 @@ var exec = require('cordova/exec');
  */
 function Beacon() {}
 
-Beacon.prototype.addRegion = function(success, fail, params) {
-  exec(success, fail, "Beacon", "addBeaconRegion", [params || {}]);
+Beacon.prototype.addBeacon = function(success, fail, params) {
+  exec(success, fail, "Beacon", "addBeacon", [params || {}]);
 };
 
-Beacon.prototype.removeRegion = function(success, fail, params) {
-  exec(success, fail, "Beacon", "removeBeaconRegion", [params || {}]);
+Beacon.prototype.removeBeacon = function(success, fail, params) {
+  exec(success, fail, "Beacon", "removeBeacon", [params || {}]);
 };
                
 Beacon.prototype.setHost = function(success, fail, params) {
@@ -26,8 +26,8 @@ Beacon.prototype.setToken = function(success, fail, params) {
 Params:
 NONE
 */
-Beacon.prototype.getWatchedRegionIds = function(success, fail) {
-  exec(success, fail, "Beacon", "getWatchedBeaconRegionIds", []);
+Beacon.prototype.getWatchedBeaconIds = function(success, fail) {
+  exec(success, fail, "Beacon", "getWatchedBeaconIds", []);
 };
 
 
@@ -36,3 +36,4 @@ Beacon.prototype.getWatchedRegionIds = function(success, fail) {
 var Beacon = new Beacon();
 module.exports = Beacon;
 // });
+
