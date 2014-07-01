@@ -403,7 +403,7 @@ static BeaconHelper *sharedBeaconHelper = nil;
                     [setBeaconTimers setObject:dateToSave forKey:[NSString stringWithFormat:@"beaconTimer%@_%@", region.identifier, [self stringForProximity:beacon.proximity]]];
                     [setBeaconTimers synchronize]; //at the end of storage
                     
-                    enqueueBlock();
+                    //enqueueBlock();
                     
                     break;
             }
