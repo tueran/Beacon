@@ -22,11 +22,11 @@ cordova plugin add https://github.com/tueran/Beacon
 
 Beacon.js contains the following functions:
 
-    addRegion - Add a region to moitoring
-    removeRegion - Remove a region from monitoring
+    addBeacon - Add a region to moitoring
+    removeBeacon - Remove a region from monitoring
     setHost - sets the Host form the call url from outside
     setToken - sets the user toker from outside
-    getWatchedRegionIds - Returns a list of currently monitored region identifiers.
+    getWatchedBeaconIds - Returns a list of currently monitored region identifiers.
     
 
 
@@ -40,9 +40,9 @@ To add a new region to be monitored use the Beacon Beacon.addRegion function. Th
     minor - int - Specifies the radius in meters of the region.
     
 
-<strong>Example: addRegion (Beacon)</strong>
+<strong>Example: addBeacon</strong>
 ```bash
-Beacon.addRegion(function(){
+Beacon.addBeacon(function(){
                              alert('success');
                              }, function(){
                              alert('error');
@@ -62,17 +62,14 @@ To remove an existing region use the Beacon removeRegion function. The parameter
     major - int - latitude of the region.
     minor - int - Specifies the radius in meters of the region.
 
-<strong>Example: removeRegion (Beacon)</strong>
+<strong>Example: removeBeacon</strong>
 ```bash
-Beacon.removeRegion(function(){
+Beacon.removeBeacon(function(){
                              alert('success');
                              }, function(){
                              alert('error');
                              }, {
-                             bid: 1234567890,
-                             puuid: 'f7826da6-4fa2-4e98-8024-bc5b71e0893e',
-                             major: 11111,
-                             minor: 23456
+                             bid: 1234567890
                              });
 ```
 
@@ -80,9 +77,9 @@ Beacon.removeRegion(function(){
 To retrieve the list of identifiers of currently monitored regions use the Beacon getWatchedRegionIds function. No parameters.
 The result object contains an array of strings in regionids
 
-<strong>Example: getWatchedRegionIds (Beacon)</strong>
+<strong>Example: getWatchedBeaconIds (Beacon)</strong>
 ```bash
-Beacon.getWatchedRegionIds(
+Beacon.getWatchedBeaconIds(
                              function(result) {
                              alert("success: " + result.beaconRegionids);
                              },
