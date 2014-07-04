@@ -105,6 +105,7 @@
 -(void)addBeacon:(CDVInvokedUrlCommand *)command
 {
     NSString* callbackId = command.callbackId;
+    NSLog(@"command Arguments: %@", command.arguments);
     
     [[BeaconHelper sharedBeaconHelper] saveBeaconCallbackId:callbackId];
     [[BeaconHelper sharedBeaconHelper] setCommandDelegate:self.commandDelegate];
@@ -154,16 +155,19 @@
     
     
     NSMutableDictionary *options = [command.arguments objectAtIndex:0];
+    NSLog(@"NSMutableDictionary - options: %@", options);
     [self addBeaconToMonitor:options];
     [[BeaconHelper sharedBeaconHelper] returnBeaconRegionSuccess];
     
-    NSLog(@"addRegions: options: %@", options);
+    //NSLog(@"addRegions: options: %@", options);
 }
 
 
 - (void) addBeaconToMonitor:(NSMutableDictionary *)params {
     // Parse Incoming Params
+    NSLog(@"addBeaconToMonitor - params: %@", params);
     NSString *beaconId = [[params objectForKey:KEY_BEACON_ID] stringValue];
+    //    NSString *beaconId = [[params stringForK]]
     NSString *proximityUUID = [params objectForKey:KEY_BEACON_PUUID];
     NSInteger majorInt = [[params objectForKey:KEY_BEACON_MAJOR] intValue];
     NSInteger minorInt = [[params objectForKey:KEY_BEACON_MINOR] intValue];
@@ -218,12 +222,16 @@
         //NSLog(@"beaconRegion.description: %@", beaconRegion.description);
         
     }
+    
     NSMutableDictionary* posError = [NSMutableDictionary dictionaryWithCapacity:3];
     [posError setObject: [NSNumber numberWithInt: CDVCommandStatus_OK] forKey:@"code"];
     [posError setObject: @"BeaconRegion Success" forKey: @"message"];
     [posError setObject: watchedBeaconRegions forKey: @"beaconRegionids"];
     
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
+    //CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:watchedBeaconRegions];
+    NSLog(@"PluginResult: %@", pluginResult);
+    NSLog(@"PositionError: %@", posError);
     if (callbackId) {
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         //NSLog(@"posError: %@", posError);
@@ -234,6 +242,8 @@
 
 - (void) removeBeaconToMonitor:(NSMutableDictionary *)params {
     // Parse Incoming Params
+    NSLog(@"removeBeaconToMonitor - params: %@", params);
+    
     NSString *beaconId = [[params objectForKey:KEY_BEACON_ID] stringValue];
     NSString *proximityUUID = [params objectForKey:KEY_BEACON_PUUID];
     NSInteger majorInt = [[params objectForKey:KEY_BEACON_MAJOR] intValue];
@@ -299,8 +309,16 @@
     }
     
     
-    NSMutableDictionary *options = [command.arguments objectAtIndex:0];
+    //    NSMutableDictionary *options = [command.arguments objectAtIndex:0];
+    NSMutableDictionary *options = [[NSMutableDictionary alloc] init];
+    [options setObject:[command.arguments objectAtIndex:0] forKey:@"bid"];
+    NSLog(@"RemoveBeacon - options: %@", options);
     [self removeBeaconToMonitor:options];
+    
+    
+    //    NSString *beaconId = [command.arguments objectAtIndex:0];
+    //    NSLog(@"RemoveBeacon - options: %@", beaconId);
+    //    [self removeBeaconToMonitor:beaconId];
     
     [[BeaconHelper sharedBeaconHelper] returnBeaconRegionSuccess];
 }

@@ -68,9 +68,9 @@ Beacon.removeBeacon(function(){
                              alert('success');
                              }, function(){
                              alert('error');
-                             }, {
-                             bid: 1234567890
-                             });
+                             }, 
+                             1234567890
+                             );
 ```
 
 
@@ -81,7 +81,7 @@ The result object contains an array of strings in regionids
 ```bash
 Beacon.getWatchedBeaconIds(
                              function(result) {
-                             alert("success: " + result.beaconRegionids);
+                             alert("success: " + result);
                              },
                              function(error) {
                              alert("error");
