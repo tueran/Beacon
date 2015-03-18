@@ -64,5 +64,8 @@ typedef NSInteger BeaconLocationStatus;
 - (void) returnBeaconRegionSuccess;
 - (void) saveBeaconCallbackId:(NSString *) callbackId;
 
+- (void) checkLocationAccessForRanging;
+- (void) checkLocationAccessForMonitoring;
+
 
 @end

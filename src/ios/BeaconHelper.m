@@ -307,8 +307,8 @@ static BeaconHelper *sharedBeaconHelper = nil;
 
 
 -(void)locationManager:(CLLocationManager *)manager didRangeBeacons:(NSArray *)beacons inRegion:(CLBeaconRegion *)region {
-    //NSLog(@"didRangeBeacons");
-    //NSLog(@"all beacons: %lu", (unsigned long)[beacons count]);
+    NSLog(@"didRangeBeacons");
+    NSLog(@"all beacons: %lu", (unsigned long)[beacons count]);
     CLBeacon *beacon = [[CLBeacon alloc] init];
     beacon = [beacons lastObject];
     
@@ -411,7 +411,16 @@ static BeaconHelper *sharedBeaconHelper = nil;
             
             
         } else if (beacon.proximity == CLProximityImmediate) {
-            //NSLog(@"Proximity: Immediate: %d", beacon.proximity);
+            NSLog(@"Proximity: Immediate: %d", beacon.proximity);
+            // Test Local Notification
+            //            UILocalNotification* localNotification = [[UILocalNotification alloc] init];
+            //            localNotification.fireDate = [NSDate dateWithTimeIntervalSinceNow:5];
+            //            localNotification.alertBody = @"Your alert message";
+            //            localNotification.timeZone = [NSTimeZone defaultTimeZone];
+            //            [[UIApplication sharedApplication] scheduleLocalNotification:localNotification];
+            
+            // Test Local Notification - End
+            
             
             // Load the storage data from nsuserdefaults
             NSUserDefaults *preferences = [NSUserDefaults standardUserDefaults];
@@ -715,6 +724,43 @@ static BeaconHelper *sharedBeaconHelper = nil;
             return nil;
     }
 }
+
+
+
+
+
+#pragma mark - Access
+
+- (void)checkLocationAccessForRanging {
+    if ([self.locationManager respondsToSelector:@selector(requestWhenInUseAuthorization)]) {
+        [self.locationManager requestWhenInUseAuthorization];
+    }
+}
+
+- (void)checkLocationAccessForMonitoring {
+    if ([self.locationManager respondsToSelector:@selector(requestAlwaysAuthorization)]) {
+        CLAuthorizationStatus authorizationStatus = [CLLocationManager authorizationStatus];
+        if (authorizationStatus == kCLAuthorizationStatusDenied ||
+            authorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse) {
+            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Location Access Missing"
+                                                            message:@"Required Location Access(Always) missing. Click Settings to update Location Access."
+                                                           delegate:self
+                                                  cancelButtonTitle:@"Settings"
+                                                  otherButtonTitles:@"Cancel", nil];
+            //[alert show];
+            return;
+        }
+        [self.locationManager requestAlwaysAuthorization];
+    }
+}
+
+#pragma mark - Alert view delegate methods
+- (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex {
+    if (buttonIndex == 0) {
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]];
+    }
+}
+
 
 
 @end

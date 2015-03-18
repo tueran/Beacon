@@ -67,18 +67,18 @@
     return NO;
 }
 
-- (BOOL) isAuthorized
-{
-    BOOL authorizationStatusClassPropertyAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
-    if (authorizationStatusClassPropertyAvailable)
-    {
-        NSUInteger authStatus = [CLLocationManager authorizationStatus];
-        return (authStatus == kCLAuthorizationStatusAuthorized) || (authStatus == kCLAuthorizationStatusNotDetermined);
-    }
-    
-    // by default, assume YES (for iOS < 4.2)
-    return YES;
-}
+//- (BOOL) isAuthorized
+//{
+//    BOOL authorizationStatusClassPropertyAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
+//    if (authorizationStatusClassPropertyAvailable)
+//    {
+//        NSUInteger authStatus = [CLLocationManager authorizationStatus];
+//        return (authStatus == kCLAuthorizationStatusAuthorized) || (authStatus == kCLAuthorizationStatusNotDetermined);
+//    }
+//
+//    // by default, assume YES (for iOS < 4.2)
+//    return YES;
+//}
 
 
 - (BOOL) isLocationServicesEnabled
@@ -109,6 +109,7 @@
     
     [[BeaconHelper sharedBeaconHelper] saveBeaconCallbackId:callbackId];
     [[BeaconHelper sharedBeaconHelper] setCommandDelegate:self.commandDelegate];
+    NSLog(@"setCommandDelegate: self.commandDelegate: -  %@", self.commandDelegate);
     
     
     if (self.isLocationServicesEnabled) {
@@ -121,25 +122,64 @@
         
     }
     
-    if (![self isAuthorized]) {
-        NSString* message = nil;
-        BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
+    //    if (![self isAuthorized]) {
+    //        NSString* message = nil;
+    //        BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
+    //
+    //        if (authStatusAvailable) {
+    //            NSUInteger code = [CLLocationManager authorizationStatus];
+    //
+    //            if (code == kCLAuthorizationStatusNotDetermined) {
+    //                // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
+    //                message = @"User undecided on application's use of location services";
+    //            } else if (code == kCLAuthorizationStatusRestricted) {
+    //                message = @"application use of location services is restricted";
+    //            }
+    //        }
+    //        //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
+    //        [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: message];
+    //
+    //        return;
+    //    }
+    
+    
+    
+    
+    CLAuthorizationStatus status = [CLLocationManager authorizationStatus];
+    NSLog(@"CLAuthorizationStatus: %d", status);
+    
+    // If the status is denied or only granted for when in use, display an alert
+    if (status == kCLAuthorizationStatusAuthorizedWhenInUse || status == kCLAuthorizationStatusDenied) {
+        NSString *title;
+        title = (status == kCLAuthorizationStatusDenied) ? @"Location services are off" : @"Background location is not enabled";
+        NSString *message = @"To use background location you must turn on 'Always' in the Location Services Settings";
         
-        if (authStatusAvailable) {
-            NSUInteger code = [CLLocationManager authorizationStatus];
-            
-            if (code == kCLAuthorizationStatusNotDetermined) {
-                // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
-                message = @"User undecided on application's use of location services";
-            } else if (code == kCLAuthorizationStatusRestricted) {
-                message = @"application use of location services is restricted";
-            }
-        }
-        //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
-        [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: message];
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title
+                                                            message:message
+                                                           delegate:self
+                                                  cancelButtonTitle:@"Cancel"
+                                                  otherButtonTitles:@"Settings", nil];
+        // [alertView show];
         
-        return;
+        // status when in use or denied
+        NSString* errorMessage = nil;
+        errorMessage = @"User undecided on application's use of location services";
+        [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: errorMessage];
+        
     }
+    // The user has not enabled any location services. Request background authorization.
+    else if (status == kCLAuthorizationStatusNotDetermined) {
+        //[self.locationManager requestAlwaysAuthorization];
+        NSLog(@"requestAlwaysAuthorization - start");
+        [[[BeaconHelper sharedBeaconHelper] locationManager] requestAlwaysAuthorization];
+        NSLog(@"requestAlwaysAuthorization - end");
+    }
+    
+    //    if (status == kCLAuthorizationStatusAuthorizedAlways) {
+    //        NSLog(@"kCLAuthorizationStatusAuthorizedAlways: status: %d", status);
+    //    }
+    
+    
     
     if (![self isRegionMonitoringAvailable])
     {
@@ -160,6 +200,10 @@
     [[BeaconHelper sharedBeaconHelper] returnBeaconRegionSuccess];
     
     //NSLog(@"addRegions: options: %@", options);
+    
+    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForRanging];
+    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForMonitoring];
+    
 }
 
 
@@ -181,6 +225,8 @@
     NSLog(@"Function: addRegion, BeaconRegion: %@", beaconRegion);
     [[[BeaconHelper sharedBeaconHelper] locationManager] startMonitoringForRegion:beaconRegion];
     
+    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForRanging];
+    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForMonitoring];
 }
 
 
@@ -238,6 +284,10 @@
     }
     
     NSLog(@"watchedBeaconRegions: %@", watchedBeaconRegions);
+    
+    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForRanging];
+    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForMonitoring];
+    
 }
 
 - (void) removeBeaconToMonitor:(NSMutableDictionary *)params {
@@ -277,24 +327,24 @@
         }
     }
     
-    if (![self isAuthorized])
-    {
-        NSString* message = nil;
-        BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
-        if (authStatusAvailable) {
-            NSUInteger code = [CLLocationManager authorizationStatus];
-            if (code == kCLAuthorizationStatusNotDetermined) {
-                // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
-                message = @"User undecided on application's use of location services";
-            } else if (code == kCLAuthorizationStatusRestricted) {
-                message = @"application use of location services is restricted";
-            }
-        }
-        //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
-        [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: message];
-        
-        return;
-    }
+    //    if (![self isAuthorized])
+    //    {
+    //        NSString* message = nil;
+    //        BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
+    //        if (authStatusAvailable) {
+    //            NSUInteger code = [CLLocationManager authorizationStatus];
+    //            if (code == kCLAuthorizationStatusNotDetermined) {
+    //                // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
+    //                message = @"User undecided on application's use of location services";
+    //            } else if (code == kCLAuthorizationStatusRestricted) {
+    //                message = @"application use of location services is restricted";
+    //            }
+    //        }
+    //        //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
+    //        [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: message];
+    //
+    //        return;
+    //    }
     
     if (![self isRegionMonitoringAvailable])
     {
@@ -367,6 +417,11 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
     }
 }
+
+
+
+
+
 
 
 @end
