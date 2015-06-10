@@ -14,8 +14,47 @@ cordova create com.siteforum.beacon && cd $_
 - Add the plugin to it
 
 ```bash
-phonegap local plugin add https://github.com/tueran/Geofencing.git
 cordova plugin add https://github.com/tueran/Beacon
+```
+
+- Add to AppDelegate.m
+```bash
+#import <EstimoteSDK/EstimoteSDK.h>
+#import "Beacon.h"
+
+- (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
+{
+    ......
+
+    [[Beacon sharedManager] start];
+}
+
+```
+
+- Add to ViewController.h
+```bash
+#import <EstimoteSDK/EstimoteSDK.h>
+
+@interface MainViewController : CDVViewController <ESTBeaconManagerDelegate, CLLocationManagerDelegate>
+
+@property (nonatomic, strong) CLBeacon *beacon;
+@property (nonatomic, strong) ESTBeaconManager *beaconManager;
+@property (nonatomic, strong) CLBeaconRegion *beaconRegion;
+
+@end
+```
+
+- Add to ViewController.m
+```bash
+#import "Beacon.h"
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    
+    [[Beacon sharedManager] setDelegate:self];   
+}
 ```
 
 ## INCLUDED FUNTIONS

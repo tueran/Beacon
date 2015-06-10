@@ -2,9 +2,12 @@
 
 <plugin xmlns="http://cordova.apache.org/ns/plugins/1.0"
     id="com.siteforum.plugins.beacon"
-    version="1.0">
+    version="2.0">
     <name>Beacon</name>
 
+    <engines>
+        <engine name="cordova" version=">=3.3.0" />
+    </engines>
     
 
     <!-- ios -->
@@ -24,6 +27,25 @@
 
          <framework src="CoreLocation.framework" />
          <framework src="CoreBluetooth.framework" />
+         <framework src="SystemConfiguration.framework"/>
+
+
+        <source-file framework="true" src="lib/EstimoteSDK/EstimoteSDK.framework"/>
+
+        <header-file src="lib/ios/EstimoteSDK/Headers/ESTBeaconManager.h"/>
+        <header-file src="lib/ios/EstimoteSDK/Headers/ESTBeaconRegion.h"/>
+        <header-file src="lib/ios/EstimoteSDK/Headers/ESTBeaconVO.h"/>
+        <header-file src="lib/ios/EstimoteSDK/Headers/ESTBeaconDefinitions.h"/>
+        <header-file src="lib/ios/EstimoteSDK/Headers/ESTBeacon.h"/>
+        <header-file src="lib/ios/EstimoteSDK/Headers/ESTDefinitions.h"/>
+
+        <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
+            <string>This application uses your location to determine which table you're at when ordering your coffee.</string>
+        </config-file>
+
+        <config-file target="*-Info.plist" parent="NSLocationAlwaysUsageDescription">
+            <string>This application monitors your location to show you promotional offers in shops you're passing by.</string>
+        </config-file>
 
     </platform>
 </plugin>

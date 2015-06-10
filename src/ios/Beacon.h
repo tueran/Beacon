@@ -2,11 +2,9 @@
 //  Beacon.h
 //  Beacon
 //
-//  Created by Daniel Mauer on 26.06.14.
+//  Created by Daniel Mauer on 09.06.15.
 //
 //
-
-//#import <Cordova/Cordova.h>
 
 #import <Foundation/Foundation.h>
 #import <Cordova/CDVPlugin.h>
@@ -14,7 +12,7 @@
 #import <CoreLocation/CoreLocation.h>
 #import <CoreBluetooth/CoreBluetooth.h>
 #import <MapKit/MapKit.h>
-#import "BeaconHelper.h"
+#import <EstimoteSDK/EstimoteSDK.h>
 
 #define KEY_BEACON_ID @"bid"
 #define KEY_BEACON_PUUID @"puuid"
@@ -22,17 +20,15 @@
 #define KEY_BEACON_MINOR @"minor"
 
 
+@interface Beacon : CDVPlugin <ESTBeaconManagerDelegate, CLLocationManagerDelegate>
 
-@interface Beacon : CDVPlugin <CLLocationManagerDelegate>
+@property (nonatomic, retain) NSMutableArray* beaconLocationCallbacks;
+@property (nonatomic, retain) NSMutableArray* beaconCallbacks;
 
-- (BOOL) isLocationServicesEnabled;
-- (BOOL) isAuthorized;
-- (BOOL) isRegionMonitoringAvailable;
-- (BOOL) isRegionMonitoringEnabled;
-- (BOOL) isSignificantLocationChangeMonitoringAvailable;
+@property (nonatomic, weak) id<ESTBeaconManagerDelegate> delegate;
 
-- (void) addBeaconToMonitor:(NSMutableDictionary *)params;
-- (void) removeBeaconToMonitor:(NSMutableDictionary *)params;
++ (Beacon *) sharedManager;
+- (void) start;
 
 #pragma mark Plugin Functions
 - (void) addBeacon:(CDVInvokedUrlCommand*)command;
@@ -42,3 +38,4 @@
 - (void) setToken:(CDVInvokedUrlCommand*)command;
 
 @end
+

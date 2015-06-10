@@ -2,7 +2,7 @@
 //  Beacon.m
 //  Beacon
 //
-//  Created by Daniel Mauer on 26.06.14.
+//  Created by Daniel Mauer on 09.06.15.
 //
 //
 
@@ -10,13 +10,46 @@
 
 #import <Cordova/CDV.h>
 #import <Cordova/CDVViewController.h>
+#import <CoreBluetooth/CoreBluetooth.h>
 #import <CoreLocation/CoreLocation.h>
+#import <EstimoteSDK/EstimoteSDK.h>
 
 
+@interface Beacon () <ESTBeaconManagerDelegate, CLLocationManagerDelegate>
 
-#pragma mark - Geofenfing Implementation
+@property (nonatomic, strong) CLBeacon *beacon;
+@property (nonatomic, strong) ESTBeaconManager *beaconManager;
+@property (nonatomic, strong) CLBeaconRegion *beaconRegion;
+
+@property (nonatomic, strong) NSObject *beaconLocationData;
+@property (nonatomic, strong) NSObject *beaconArray;
+
+@property (nonatomic, strong) CLRegion *region;
+@property (nonatomic, strong) CLLocationManager *locationManager;
+@property (nonatomic, strong) CLLocation *location;
+
+@end
+
+#pragma mark - Implementation
 
 @implementation Beacon
+@synthesize delegate;
+
+static Beacon *sharedInstance = nil;
+
+
++ (void) initialize
+{
+    if (self == [Beacon class])
+    {
+        sharedInstance = [[self alloc] init];
+    }
+}
+
++ (Beacon *) sharedManager
+{
+    return sharedInstance;
+}
 
 - (CDVPlugin*) initWithWebView:(UIWebView*)theWebView
 {
@@ -28,358 +61,56 @@
     return self;
 }
 
-- (BOOL) isSignificantLocationChangeMonitoringAvailable
-{
-    BOOL significantLocationChangeMonitoringAvailablelassPropertyAvailable = [CLLocationManager respondsToSelector:@selector(significantLocationChangeMonitoringAvailable)];
-    if (significantLocationChangeMonitoringAvailablelassPropertyAvailable)
-    {
-        BOOL significantLocationChangeMonitoringAvailable = [CLLocationManager significantLocationChangeMonitoringAvailable];
-        return (significantLocationChangeMonitoringAvailable);
-    }
+
+- (id) init {
     
-    // by default, assume NO
-    return NO;
+    self = [super init];
+    if (self) {
+        self.locationManager = [[CLLocationManager alloc] init];
+        self.locationManager.delegate = self; // Tells the location manager to send updates to this object
+        self.beaconLocationData = nil;
+        
+        self.beaconManager = [[ESTBeaconManager alloc] init];
+        self.beaconManager.delegate = self;
+        
+        self.beaconArray = [[NSObject alloc] init];
+        
+    }
+    return self;
 }
 
-- (BOOL) isRegionMonitoringAvailable
+- (void)start
 {
-    BOOL regionMonitoringAvailableClassPropertyAvailable = [CLLocationManager respondsToSelector:@selector(regionMonitoringAvailable)];
-    if (regionMonitoringAvailableClassPropertyAvailable)
+    for (CLBeaconRegion *beacon in [self.locationManager monitoredRegions])
     {
-        BOOL regionMonitoringAvailable = [CLLocationManager regionMonitoringAvailable];
-        return (regionMonitoringAvailable);
+        //NSLog(@"beacon: %@", beacon);
+        [self.locationManager startMonitoringForRegion:beacon];
+        [self startRanging];
+        [self.locationManager startUpdatingLocation];
     }
-    
-    // by default, assume NO
-    return NO;
 }
 
-- (BOOL) isRegionMonitoringEnabled
+- (void) startRanging
 {
-    BOOL regionMonitoringEnabledClassPropertyAvailable = [CLLocationManager respondsToSelector:@selector(regionMonitoringEnabled)];
-    if (regionMonitoringEnabledClassPropertyAvailable)
+    for (CLBeaconRegion *beacon in [self.locationManager monitoredRegions])
     {
-        BOOL regionMonitoringEnabled = [CLLocationManager regionMonitoringEnabled];
-        return (regionMonitoringEnabled);
+        CLBeaconRegion *region = beacon;
+        region.notifyOnEntry = YES;
+        region.notifyOnExit = YES;
+        region.notifyEntryStateOnDisplay = YES;
+        
+        [self.beaconManager startRangingBeaconsInRegion: region];
     }
-    
-    // by default, assume NO
-    return NO;
 }
 
-//- (BOOL) isAuthorized
-//{
-//    BOOL authorizationStatusClassPropertyAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
-//    if (authorizationStatusClassPropertyAvailable)
-//    {
-//        NSUInteger authStatus = [CLLocationManager authorizationStatus];
-//        return (authStatus == kCLAuthorizationStatusAuthorized) || (authStatus == kCLAuthorizationStatusNotDetermined);
-//    }
-//
-//    // by default, assume YES (for iOS < 4.2)
-//    return YES;
-//}
 
-
-- (BOOL) isLocationServicesEnabled
-{
-    BOOL locationServicesEnabledInstancePropertyAvailable = [[[BeaconHelper sharedBeaconHelper] locationManager] respondsToSelector:@selector(locationServicesEnabled)]; // iOS 3.x
-    BOOL locationServicesEnabledClassPropertyAvailable = [CLLocationManager respondsToSelector:@selector(locationServicesEnabled)]; // iOS 4.x
-    
-    if (locationServicesEnabledClassPropertyAvailable)
-    { // iOS 4.x
-        return [CLLocationManager locationServicesEnabled];
-    }
-    else if (locationServicesEnabledInstancePropertyAvailable)
-    { // iOS 2.x, iOS 3.x
-        return [(id)[[BeaconHelper sharedBeaconHelper] locationManager] locationServicesEnabled];
-    }
-    else
-    {
-        return NO;
-    }
-}
 
 #pragma mark - iBeacon functions
-
--(void)addBeacon:(CDVInvokedUrlCommand *)command
-{
-    NSString* callbackId = command.callbackId;
-    NSLog(@"command Arguments: %@", command.arguments);
-    
-    [[BeaconHelper sharedBeaconHelper] saveBeaconCallbackId:callbackId];
-    [[BeaconHelper sharedBeaconHelper] setCommandDelegate:self.commandDelegate];
-    NSLog(@"setCommandDelegate: self.commandDelegate: -  %@", self.commandDelegate);
-    
-    
-    if (self.isLocationServicesEnabled) {
-        BOOL forcePrompt = NO;
-        
-        if (forcePrompt) {
-            [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage:nil];
-            return;
-        }
-        
-    }
-    
-    //    if (![self isAuthorized]) {
-    //        NSString* message = nil;
-    //        BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
-    //
-    //        if (authStatusAvailable) {
-    //            NSUInteger code = [CLLocationManager authorizationStatus];
-    //
-    //            if (code == kCLAuthorizationStatusNotDetermined) {
-    //                // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
-    //                message = @"User undecided on application's use of location services";
-    //            } else if (code == kCLAuthorizationStatusRestricted) {
-    //                message = @"application use of location services is restricted";
-    //            }
-    //        }
-    //        //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
-    //        [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: message];
-    //
-    //        return;
-    //    }
-    
-    
-    
-    
-    CLAuthorizationStatus status = [CLLocationManager authorizationStatus];
-    NSLog(@"CLAuthorizationStatus: %d", status);
-    
-    // If the status is denied or only granted for when in use, display an alert
-    if (status == kCLAuthorizationStatusAuthorizedWhenInUse || status == kCLAuthorizationStatusDenied) {
-        NSString *title;
-        title = (status == kCLAuthorizationStatusDenied) ? @"Location services are off" : @"Background location is not enabled";
-        NSString *message = @"To use background location you must turn on 'Always' in the Location Services Settings";
-        
-        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title
-                                                            message:message
-                                                           delegate:self
-                                                  cancelButtonTitle:@"Cancel"
-                                                  otherButtonTitles:@"Settings", nil];
-        // [alertView show];
-        
-        // status when in use or denied
-        NSString* errorMessage = nil;
-        errorMessage = @"User undecided on application's use of location services";
-        [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: errorMessage];
-        
-    }
-    // The user has not enabled any location services. Request background authorization.
-    else if (status == kCLAuthorizationStatusNotDetermined) {
-        //[self.locationManager requestAlwaysAuthorization];
-        NSLog(@"requestAlwaysAuthorization - start");
-        [[[BeaconHelper sharedBeaconHelper] locationManager] requestAlwaysAuthorization];
-        NSLog(@"requestAlwaysAuthorization - end");
-    }
-    
-    //    if (status == kCLAuthorizationStatusAuthorizedAlways) {
-    //        NSLog(@"kCLAuthorizationStatusAuthorizedAlways: status: %d", status);
-    //    }
-    
-    
-    
-    if (![self isRegionMonitoringAvailable])
-    {
-        [[BeaconHelper sharedBeaconHelper] returnBeaconError:REGIONMONITORINGUNAVAILABLE withMessage: @"Region monitoring is unavailable"];
-        return;
-    }
-    
-    if (![self isRegionMonitoringEnabled])
-    {
-        [[BeaconHelper sharedBeaconHelper] returnBeaconError:REGIONMONITORINGPERMISSIONDENIED withMessage: @"User has restricted the use of region monitoring"];
-        return;
-    }
-    
-    
-    NSMutableDictionary *options = [command.arguments objectAtIndex:0];
-    NSLog(@"NSMutableDictionary - options: %@", options);
-    [self addBeaconToMonitor:options];
-    [[BeaconHelper sharedBeaconHelper] returnBeaconRegionSuccess];
-    
-    //NSLog(@"addRegions: options: %@", options);
-    
-    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForRanging];
-    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForMonitoring];
-    
-}
-
-
-- (void) addBeaconToMonitor:(NSMutableDictionary *)params {
-    // Parse Incoming Params
-    NSLog(@"addBeaconToMonitor - params: %@", params);
-    NSString *beaconId = [[params objectForKey:KEY_BEACON_ID] stringValue];
-    //    NSString *beaconId = [[params stringForK]]
-    NSString *proximityUUID = [params objectForKey:KEY_BEACON_PUUID];
-    NSInteger majorInt = [[params objectForKey:KEY_BEACON_MAJOR] intValue];
-    NSInteger minorInt = [[params objectForKey:KEY_BEACON_MINOR] intValue];
-    NSUUID *puuid = [[NSUUID alloc] initWithUUIDString:proximityUUID];
-    
-    CLBeaconRegion *beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:puuid major:majorInt minor:minorInt identifier:beaconId];
-    beaconRegion.notifyOnEntry = YES;
-    beaconRegion.notifyOnExit = YES;
-    beaconRegion.notifyEntryStateOnDisplay = YES;
-    
-    NSLog(@"Function: addRegion, BeaconRegion: %@", beaconRegion);
-    [[[BeaconHelper sharedBeaconHelper] locationManager] startMonitoringForRegion:beaconRegion];
-    
-    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForRanging];
-    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForMonitoring];
-}
-
-
-- (void)getWatchedBeaconIds:(CDVInvokedUrlCommand*)command {
-    NSString* callbackId = command.callbackId;
-    //NSLog(@"getWatchedBeaconRegionIds: callbackId: %@", callbackId);
-    
-    NSSet *beaconRegions = [[BeaconHelper sharedBeaconHelper] locationManager].monitoredRegions;
-    //NSLog(@"getWatchedBeaconRegionIds: %@", beaconRegions);
-    
-    /*
-     *      T E S T - O R D E R E D  N S S E T
-     */
-    
-    NSMutableArray* beaconRegionArray = [[NSMutableArray alloc] init];
-    
-    for (id region in beaconRegions.allObjects) {
-        if ([region isKindOfClass:[CLCircularRegion class]]) {
-            //NSLog(@"hier ist eine Geofencing Region");
-            // Abfragen auf circular-Properties die Du suchst....
-        } else if ([region isKindOfClass:[CLBeaconRegion class]]) {
-            //NSLog(@"hier ist eine Beacon Region");
-            // Abfragen auf beacon-Properties die Su suchst...
-            [beaconRegionArray addObject:region];
-        }
-    }
-    
-    NSLog(@"Mein neues Array nur mit Beacons: %@", beaconRegionArray);
-    
-    
-    /*
-     *          E N D E
-     */
-    
-    NSMutableArray *watchedBeaconRegions = [NSMutableArray array];
-    for (CLRegion *beaconRegion in beaconRegionArray) {
-        [watchedBeaconRegions addObject:beaconRegion.identifier];
-        //NSLog(@"beaconRegion.identifier: %@", beaconRegion.identifier);
-        //NSLog(@"beaconRegion.description: %@", beaconRegion.description);
-        
-    }
-    
-    NSMutableDictionary* posError = [NSMutableDictionary dictionaryWithCapacity:3];
-    [posError setObject: [NSNumber numberWithInt: CDVCommandStatus_OK] forKey:@"code"];
-    [posError setObject: @"BeaconRegion Success" forKey: @"message"];
-    [posError setObject: watchedBeaconRegions forKey: @"beaconRegionids"];
-    
-    //CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posError];
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:watchedBeaconRegions];
-    NSLog(@"PluginResult: %@", pluginResult);
-    NSLog(@"PositionError: %@", posError);
-    if (callbackId) {
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        //NSLog(@"posError: %@", posError);
-    }
-    
-    NSLog(@"watchedBeaconRegions: %@", watchedBeaconRegions);
-    
-    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForRanging];
-    [[BeaconHelper sharedBeaconHelper] checkLocationAccessForMonitoring];
-    
-}
-
-- (void) removeBeaconToMonitor:(NSMutableDictionary *)params {
-    // Parse Incoming Params
-    NSLog(@"removeBeaconToMonitor - params: %@", params);
-    
-    NSString *beaconId = [[params objectForKey:KEY_BEACON_ID] stringValue];
-    NSString *proximityUUID = [params objectForKey:KEY_BEACON_PUUID];
-    NSInteger majorInt = [[params objectForKey:KEY_BEACON_MAJOR] intValue];
-    NSInteger minorInt = [[params objectForKey:KEY_BEACON_MINOR] intValue];
-    NSUUID *puuid = [[NSUUID alloc] initWithUUIDString:proximityUUID];
-    
-    CLBeaconRegion *beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:puuid major:majorInt minor:minorInt identifier:beaconId];
-    [[[BeaconHelper sharedBeaconHelper] locationManager] stopMonitoringForRegion:beaconRegion];
-}
-
-
-- (void)removeBeacon:(CDVInvokedUrlCommand*)command {
-    
-    NSString* callbackId = command.callbackId;
-    NSLog(@"removeBeaconRegion.callbackId: %@", callbackId);
-    NSLog(@"removeBeaconRegion.command.arguments: %@", command.arguments);
-    [[BeaconHelper sharedBeaconHelper] saveBeaconCallbackId:callbackId];
-    [[BeaconHelper sharedBeaconHelper] setCommandDelegate:self.commandDelegate];
-    
-    
-    NSLog(@"isLocationServicesEnabled: %hhd", [self isLocationServicesEnabled]);
-    if (![self isLocationServicesEnabled])
-    {
-        BOOL forcePrompt = NO;
-        NSLog(@"removeRegion.forcePromt: %hhd", forcePrompt);
-        if (!forcePrompt)
-        {
-            NSLog(@"removeRegion.forcePromt: %hhd", forcePrompt);
-            [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: nil];
-            return;
-        }
-    }
-    
-    //    if (![self isAuthorized])
-    //    {
-    //        NSString* message = nil;
-    //        BOOL authStatusAvailable = [CLLocationManager respondsToSelector:@selector(authorizationStatus)]; // iOS 4.2+
-    //        if (authStatusAvailable) {
-    //            NSUInteger code = [CLLocationManager authorizationStatus];
-    //            if (code == kCLAuthorizationStatusNotDetermined) {
-    //                // could return POSITION_UNAVAILABLE but need to coordinate with other platforms
-    //                message = @"User undecided on application's use of location services";
-    //            } else if (code == kCLAuthorizationStatusRestricted) {
-    //                message = @"application use of location services is restricted";
-    //            }
-    //        }
-    //        //PERMISSIONDENIED is only PositionError that makes sense when authorization denied
-    //        [[BeaconHelper sharedBeaconHelper] returnBeaconError:PERMISSIONDENIED withMessage: message];
-    //
-    //        return;
-    //    }
-    
-    if (![self isRegionMonitoringAvailable])
-    {
-        [[BeaconHelper sharedBeaconHelper] returnBeaconError:REGIONMONITORINGUNAVAILABLE withMessage: @"Region monitoring is unavailable"];
-        return;
-    }
-    
-    if (![self isRegionMonitoringEnabled])
-    {
-        [[BeaconHelper sharedBeaconHelper] returnBeaconError:REGIONMONITORINGPERMISSIONDENIED withMessage: @"User has restricted the use of region monitoring"];
-        return;
-    }
-    
-    
-    //    NSMutableDictionary *options = [command.arguments objectAtIndex:0];
-    NSMutableDictionary *options = [[NSMutableDictionary alloc] init];
-    [options setObject:[command.arguments objectAtIndex:0] forKey:@"bid"];
-    NSLog(@"RemoveBeacon - options: %@", options);
-    [self removeBeaconToMonitor:options];
-    
-    
-    //    NSString *beaconId = [command.arguments objectAtIndex:0];
-    //    NSLog(@"RemoveBeacon - options: %@", beaconId);
-    //    [self removeBeaconToMonitor:beaconId];
-    
-    [[BeaconHelper sharedBeaconHelper] returnBeaconRegionSuccess];
-}
-
 
 -(void)setHost:(CDVInvokedUrlCommand*)command
 {
     NSString* callbackId = command.callbackId;
     NSString* beaconHost = [command.arguments objectAtIndex:0];
-    NSLog(@"Parameter: %@", command.arguments);
-    NSLog(@"Host: %@", beaconHost);
     
     // Save the host into ne nsuserdefaults
     NSUserDefaults *preferences = [NSUserDefaults standardUserDefaults];
@@ -392,12 +123,12 @@
     }
     
     
-    NSUserDefaults *getBeaconPreferences = [NSUserDefaults standardUserDefaults];
-    NSString *getBeaconHost = [getBeaconPreferences objectForKey:@"BeaconHost"];
-    NSLog(@"getBeaconHost - objectForKey: %@", getBeaconHost);
-    
-    NSString *savedHost = (NSString *)[[NSUserDefaults standardUserDefaults] objectForKey:@"BeaconHost"];
-    NSLog(@"savedHost: %@", savedHost);
+    //    NSUserDefaults *getBeaconPreferences = [NSUserDefaults standardUserDefaults];
+    //    NSString *getBeaconHost = [getBeaconPreferences objectForKey:@"BeaconHost"];
+    //    NSLog(@"getBeaconHost - objectForKey: %@", getBeaconHost);
+    //
+    //    NSString *savedHost = (NSString *)[[NSUserDefaults standardUserDefaults] objectForKey:@"BeaconHost"];
+    //    NSLog(@"savedHost: %@", savedHost);
 }
 
 
@@ -405,7 +136,6 @@
 {
     NSString* callbackId = command.callbackId;
     NSString* token = [command.arguments objectAtIndex:0];
-    
     
     // Save the host into ne nsuserdefaults
     NSUserDefaults *preferences = [NSUserDefaults standardUserDefaults];
@@ -421,6 +151,412 @@
 
 
 
+#pragma mark - iBeacon Functions new
+
+-(void)addBeacon:(CDVInvokedUrlCommand *)command
+{
+    // setup the beacon manager
+    self.beaconManager = [[ESTBeaconManager alloc] init];
+    self.beaconManager.delegate = self;
+    
+    NSString* callbackId = command.callbackId;
+    
+    NSMutableDictionary *options = [command.arguments objectAtIndex:0];
+    
+    NSString *beaconId = [[options objectForKey:KEY_BEACON_ID] stringValue];
+    NSString *proximityUUID = [options objectForKey:KEY_BEACON_PUUID];
+    NSInteger majorInt = [[options objectForKey:KEY_BEACON_MAJOR] intValue];
+    NSInteger minorInt = [[options objectForKey:KEY_BEACON_MINOR] intValue];
+    NSUUID *puuid = [[NSUUID alloc] initWithUUIDString:proximityUUID];
+    
+    // setup the beacon region
+    self.beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:puuid
+                                                                major:majorInt
+                                                                minor:minorInt
+                                                           identifier:beaconId];
+    //    NSLog(@"self.beaconRegion: %@", self.beaconRegion);
+    // let us know when we exit and enter a region
+    self.beaconRegion.notifyOnEntry = YES;
+    self.beaconRegion.notifyOnExit = YES;
+    
+    // must have on iOS8
+    [self.beaconManager requestAlwaysAuthorization];
+    
+    // start monitoring
+    [self.beaconManager startMonitoringForRegion:self.beaconRegion];
+    [self returnMonitoringForBeaconRegionCallback:callbackId];
+    
+    // start ranging
+    [self.beaconManager startRangingBeaconsInRegion:self.beaconRegion];
+    
+    // must have on iOS8
+    //[self.beaconManager requestAlwaysAuthorization];
+    
+    //    NSLog(@"Monitored Region: %@", [self.beaconManager monitoredRegions]);
+}
+
+- (void)removeBeacon:(CDVInvokedUrlCommand*)command {
+    
+    NSString* callbackId = command.callbackId;
+    //    NSLog(@"callbackId: %@", callbackId);
+    
+    NSMutableDictionary *options = [[NSMutableDictionary alloc] init];
+    [options setObject:[command.arguments objectAtIndex:0] forKey:@"bid"];
+    
+    // load all regions
+    NSSet *beaconRegions = [self.beaconManager monitoredRegions];
+    
+    // create array with only beacons
+    NSMutableArray* beaconRegionArray = [[NSMutableArray alloc] init];
+    for (id region in beaconRegions.allObjects) {
+        if ([region isKindOfClass:[CLCircularRegion class]]) {
+            // it's for geofencing regions
+        } else if ([region isKindOfClass:[CLBeaconRegion class]]) {
+            // filtered out beacons from watched regions
+            [beaconRegionArray addObject:region];
+        }
+    }
+    
+    
+    NSString * combinedStuff = [command.arguments componentsJoinedByString:@"separator"];
+    for (CLBeaconRegion *beaconRegion in beaconRegionArray) {
+        
+        if ([combinedStuff isEqualToString:beaconRegion.identifier]) {
+            //            NSLog(@"=======    EQUAL   ======= %@", beaconRegion.identifier);
+            //            NSLog(@"identifier: %@", beaconRegion.identifier);
+            //            NSLog(@"uuid: %@", beaconRegion.proximityUUID);
+            //            NSLog(@"major: %@", beaconRegion.major);
+            //            NSLog(@"minor: %@", beaconRegion.minor);
+            
+            
+            NSString *beaconIdentifier = (NSString *)beaconRegion.identifier;
+            NSString *beaconProximityUUID = (NSString *)beaconRegion.proximityUUID.UUIDString;
+            //            NSLog(@"beaconProximityUUID: %@", beaconProximityUUID);
+            
+            int beaconMajorInt = [beaconRegion.major intValue];
+            int beaconMinorInt = [beaconRegion.minor intValue];
+            
+            NSUUID *beaconUUID = [[NSUUID alloc] initWithUUIDString:beaconProximityUUID];
+            
+            //            NSLog(@"beaconIdentifier: %@", beaconIdentifier);
+            //            NSLog(@"beaconProximityUUID: %@", beaconProximityUUID);
+            //            NSLog(@"beaconMajorInt: %d", beaconMajorInt);
+            //            NSLog(@"beaconMinorInt: %d", beaconMinorInt);
+            //            NSLog(@"beaconUUID: %@", beaconUUID);
+            
+            CLBeaconRegion *beaconRegionStop = [[CLBeaconRegion alloc] initWithProximityUUID:beaconUUID
+                                                                                       major:beaconMajorInt
+                                                                                       minor:beaconMinorInt
+                                                                                  identifier:beaconIdentifier];
+            
+            // stop monitoring
+            //            NSLog(@"self.beaconManager:%@", self.beaconManager);
+            [self.beaconManager stopMonitoringForRegion:beaconRegionStop];
+            [self returnMonitoringForBeaconRegionCallback:callbackId];
+        }
+    }
+}
+
+
+
+
+#pragma mark - iBeacon ranging and interaction
+
+
+// check for region failure
+-(void)beaconManager:(ESTBeaconManager *)manager monitoringDidFailForRegion:(CLBeaconRegion *)region withError:(NSError *)error {
+    //    NSLog(@"Region Did Fail: Manager:%@ Region:%@ Error:%@",manager, region, error);
+    
+    NSMutableDictionary* posError = [NSMutableDictionary dictionaryWithCapacity:2];
+    
+    [posError setObject: [NSNumber numberWithInt: error.code] forKey:@"code"];
+    [posError setObject: region.identifier forKey: @"beacocnid"];
+    
+    //    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:posError];
+    //            if (callbackId) {
+    //            [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
+    //        }
+    //
+    //    self.beaconLocationData.beaconCallbacks = [NSMutableArray array];
+    
+    
+}
+
+// check permission status
+-(void)beaconManager:(ESTBeaconManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status
+{
+    NSLog(@"Status:%d", status);
+}
+
+//Beacon manager did enter region
+- (void)beaconManager:(ESTBeaconManager *)manager didEnterRegion:(CLBeaconRegion *)region
+{
+    //Adding a custom local notification to be presented
+    //    UILocalNotification *notification = [[UILocalNotification alloc]init];
+    //    notification.alertBody = @"Youve enter a region!";
+    //    notification.soundName = @"Default.mp3";
+    //    NSLog(@"Youve entered");
+    //    [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
+    
+    [self triggerURL:@"far" withIdentifier:region.identifier];
+    [[self locationManager] startRangingBeaconsInRegion:region];
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self triggerURL:@"far" withIdentifier:region.identifier];
+    });
+    
+    //    dispatch_async(dispatch_get_main_queue(), ^{
+    //        [DSBezelActivityView newActivityViewForView:view];
+    //    });
+    
+}
+
+//Beacon Manager did exit the region
+- (void)beaconManager:(ESTBeaconManager *)manager didExitRegion:(CLBeaconRegion *)region
+{
+    //adding a custon local notification
+    //    UILocalNotification *notification = [[UILocalNotification alloc]init];
+    //    notification.alertBody = @"Youve exited!!!";
+    //    NSLog(@"Youve exited");
+    //    [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
+    
+    // call the url
+    [self triggerURL:@"away" withIdentifier:region.identifier];
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self triggerURL:@"away" withIdentifier:region.identifier];
+    });
+    
+}
+
+
+
+-(void)beaconManager:(ESTBeaconManager *)manager didRangeBeacons:(NSArray *)beacons inRegion:(CLBeaconRegion *)region
+{
+    
+    if (beacons.count > 0) {
+        CLBeacon *firstBeacon = [beacons firstObject];
+        [self textForProximity:firstBeacon.proximity withIdentifier:region.identifier];
+    }
+}
+
+-(NSString *)textForProximity:(CLProximity)proximity withIdentifier:(NSString *)identifier
+{
+    
+    switch (proximity) {
+        case CLProximityFar:
+            NSLog(@"far");
+            [self triggerURL:@"far" withIdentifier:identifier];
+            return @"Far";
+            break;
+        case CLProximityNear:
+            NSLog(@"near");
+            [self triggerURL:@"near" withIdentifier:identifier];
+            return @"Near";
+            break;
+        case CLProximityImmediate:
+            NSLog(@"immediate");
+            [self triggerURL:@"immediate" withIdentifier:identifier];
+            return @"Immediate";
+            break;
+        case CLProximityUnknown:
+            NSLog(@"unknown " );
+            [self triggerURL:@"unknown" withIdentifier:identifier];
+            return @"Unknown";
+            break;
+        default:
+            break;
+    }
+}
+
+
+-(void)getMessage
+{
+    UILocalNotification *msg = [[UILocalNotification alloc]init];
+    msg.alertBody = @"Youve done it!";
+    msg.soundName = @"Default.mp3";
+    NSLog(@"Youve entered");
+    [[UIApplication sharedApplication] presentLocalNotificationNow:msg];
+}
+
+
+- (void)getWatchedBeaconIds:(CDVInvokedUrlCommand*)command {
+    NSString* callbackId = command.callbackId;
+    
+    
+    // init the beacon manager
+    self.beaconManager = [[ESTBeaconManager alloc] init];
+    self.beaconManager.delegate = self;
+    
+    
+    // init all monitored regions
+    NSSet *beaconRegions = [self.beaconManager monitoredRegions];
+    
+    
+    // create array with only beacons
+    NSMutableArray* beaconRegionArray = [[NSMutableArray alloc] init];
+    for (id region in beaconRegions.allObjects) {
+        if ([region isKindOfClass:[CLCircularRegion class]]) {
+            
+            // it's for geofencing regions
+            
+        } else if ([region isKindOfClass:[CLBeaconRegion class]]) {
+            
+            // filtered out beacons from watched regions
+            NSLog(@"region: %@", region);
+            [beaconRegionArray addObject:region];
+        }
+    }
+    
+    // loop the array and put the identifier into a new array
+    NSMutableArray *watchedBeaconRegions = [NSMutableArray array];
+    for (CLRegion *beaconRegion in beaconRegionArray) {
+        [watchedBeaconRegions addObject:beaconRegion.identifier];
+    }
+    
+    
+    NSMutableDictionary* regionStatus = [NSMutableDictionary dictionaryWithCapacity:3];
+    CDVPluginResult* result = nil;
+    
+    if (callbackId != nil) {
+        [regionStatus setObject: [NSNumber numberWithInt: CDVCommandStatus_OK] forKey:@"code"];
+        [regionStatus setObject: @"BeaconRegion Success" forKey: @"message"];
+        [regionStatus setObject: watchedBeaconRegions forKey: @"beaconRegionids"];
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:regionStatus];
+    } else {
+        [regionStatus setObject: [NSNumber numberWithInt: CDVCommandStatus_ERROR] forKey:@"code"];
+        [regionStatus setObject: @"BeaconRegion Error" forKey: @"message"];
+        [regionStatus setObject: watchedBeaconRegions forKey: @"beaconRegionids"];
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:regionStatus];
+    }
+    
+    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    
+}
+
+
+
+
+#pragma mark - iBeacon common
+
+- (void) returnMonitoringForBeaconRegionCallback:(NSString *)callbackId {
+    NSMutableDictionary* posStatus = [NSMutableDictionary dictionaryWithCapacity:2];
+    
+    CDVPluginResult* result = nil;
+    if (callbackId != nil) {
+        [posStatus setObject: [NSNumber numberWithInt: CDVCommandStatus_OK] forKey:@"code"];
+        [posStatus setObject: @"BeaconRegion Success" forKey: @"message"];
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:posStatus];
+    } else {
+        [posStatus setObject: [NSNumber numberWithInt: CDVCommandStatus_ERROR] forKey:@"code"];
+        [posStatus setObject: @"BeaconRegion Error" forKey: @"message"];
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:posStatus];
+    }
+    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+}
+
+- (void) triggerURL:(NSString *)proximity withIdentifier:(NSString *)identifier {
+    // NSURL Request
+    //    NSLog(@"===================");
+    //    NSLog(@"Enter Region - URL Request");
+    //    NSLog(@"proximity; %@", proximity);
+    //    NSLog(@"identifier; %@", identifier);
+    
+    // Load the storage data from nsuserdefaults
+    NSUserDefaults *preferences = [NSUserDefaults standardUserDefaults];
+    NSString *getHost = [preferences stringForKey:@"BeaconHost"];
+    NSString *getUsertoken = [preferences stringForKey:@"BeaconUsertoken"];
+    
+    
+    //NSString* beaconUrl = [NSString stringWithFormat:@"https://%@/sf/beacons/%@/away?s=&token=%@", getHost, region.identifier, getUsertoken];
+    //    NSString *beaconUrl = [NSString stringWithFormat:@"https://www.myfavorito.com/sf/daniel_beacons/%@/%@/?device(id)=9876543210&s=", identifier, proximity];
+    NSString *beaconUrl = [NSString stringWithFormat:@"https://%@/sf/daniel_beacons/%@/%@/?token=%@&s=", getHost, identifier, proximity, getUsertoken];
+    
+    NSURL* sfUrl = [NSURL URLWithString:beaconUrl];
+    //    NSLog(@"URL: %@", sfUrl);
+    
+    // set the request
+    NSURLRequest* sfRequest = [NSURLRequest requestWithURL:sfUrl];
+    NSOperationQueue* sfQueue = [[NSOperationQueue alloc] init];
+    __block NSUInteger tries = 0;
+    
+    typedef void (^CompletionBlock)(NSURLResponse *, NSData *, NSError *);
+    __block CompletionBlock completionHandler = nil;
+    
+    // Block to start the request
+    dispatch_block_t enqueueBlock = ^{
+        [NSURLConnection sendAsynchronousRequest:sfRequest queue:sfQueue completionHandler:completionHandler];
+    };
+    
+    completionHandler = ^(NSURLResponse *sfResponse, NSData *sfData, NSError *sfError) {
+        tries++;
+        if (sfError) {
+            if (tries < 3) {
+                enqueueBlock();
+                NSLog(@"Error: %@", sfError);
+            } else {
+                NSLog(@"Cancel");
+            }
+        } else {
+            NSString* myResponse;
+            myResponse = [[NSString alloc] initWithData:sfData encoding:NSUTF8StringEncoding];
+        }
+    };
+    
+    //enqueueBlock();
+    
+    // Load NSUserDefaults
+    NSDate *savedDate = (NSDate *)[[NSUserDefaults standardUserDefaults] objectForKey:[NSString stringWithFormat:@"beaconTimer%@_%@", identifier, proximity]];
+    NSLog(@"savedDate: %@", savedDate);
+    
+    // if savedDate = nil set current time + 5 minutes
+    if (savedDate == nil) {
+        NSLog(@"No entry found");
+        NSDate *dateNow = [NSDate date];
+        NSDate *dateToSave = [dateNow dateByAddingTimeInterval:300];
+        NSLog(@"dateNow: %@", dateNow);
+        NSLog(@"dateToSave: %@", dateToSave);
+        // Save the timer into ne nsuserdefaults
+        NSUserDefaults *setBeaconTimers = [NSUserDefaults standardUserDefaults];
+        [setBeaconTimers setObject:dateToSave forKey:[NSString stringWithFormat:@"beaconTimer%@_%@", identifier, proximity]];
+        [setBeaconTimers synchronize]; //at the end of storage
+    }
+    
+    // compare current date and saved date
+    NSDate *dateNow = [NSDate date];
+    switch ([dateNow compare:savedDate]){
+        case NSOrderedAscending:
+            NSLog(@"NSOrderedAscending");
+            NSLog(@"Time is into the future");
+            
+            break;
+        case NSOrderedSame:
+            NSLog(@"NSOrderedSame");
+            break;
+        case NSOrderedDescending:
+            NSLog(@"NSOrderedDescending");
+            NSLog(@"Date is in past");
+            
+            NSDate *dateNow = [NSDate date];
+            NSDate *dateToSave = [dateNow dateByAddingTimeInterval:300];
+            // Save the timer into ne nsuserdefaults
+            NSUserDefaults *setBeaconTimers = [NSUserDefaults standardUserDefaults];
+            [setBeaconTimers setObject:dateToSave forKey:[NSString stringWithFormat:@"beaconTimer%@_%@", identifier, proximity]];
+            [setBeaconTimers synchronize]; //at the end of storage
+            
+            enqueueBlock();
+            
+            break;
+    }
+    
+    //enqueueBlock();
+    
+}
+
+- (void)writeLog
+{
+    NSLog(@"Test");
+}
 
 
 
