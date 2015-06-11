@@ -424,7 +424,7 @@ static Beacon *sharedInstance = nil;
     
     // loop the array and put the identifier into a new array
     NSMutableArray *watchedBeaconRegions = [NSMutableArray array];
-    for (CLRegion *beaconRegion in beaconRegionArray) {
+    for (CLBeaconRegion *beaconRegion in beaconRegionArray) {
         [watchedBeaconRegions addObject:beaconRegion.identifier];
     }
     
@@ -436,12 +436,17 @@ static Beacon *sharedInstance = nil;
         [regionStatus setObject: [NSNumber numberWithInt: CDVCommandStatus_OK] forKey:@"code"];
         [regionStatus setObject: @"BeaconRegion Success" forKey: @"message"];
         [regionStatus setObject: watchedBeaconRegions forKey: @"beaconRegionids"];
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:regionStatus];
+        //        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:regionStatus];
+        
+        
+        
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:watchedBeaconRegions];
     } else {
         [regionStatus setObject: [NSNumber numberWithInt: CDVCommandStatus_ERROR] forKey:@"code"];
         [regionStatus setObject: @"BeaconRegion Error" forKey: @"message"];
         [regionStatus setObject: watchedBeaconRegions forKey: @"beaconRegionids"];
         result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:regionStatus];
+        
     }
     
     [self.commandDelegate sendPluginResult:result callbackId:callbackId];
@@ -567,10 +572,6 @@ static Beacon *sharedInstance = nil;
     
 }
 
-- (void)writeLog
-{
-    NSLog(@"Test");
-}
 
 
 
