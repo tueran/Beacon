@@ -73,6 +73,10 @@ static Beacon *sharedInstance = nil;
         self.beaconManager = [[ESTBeaconManager alloc] init];
         self.beaconManager.delegate = self;
         
+        if([self.beaconManager respondsToSelector:@selector(requestAlwaysAuthorization)]) {
+            [self.beaconManager requestAlwaysAuthorization];
+        }
+        
         self.beaconArray = [[NSObject alloc] init];
         
     }
@@ -83,10 +87,18 @@ static Beacon *sharedInstance = nil;
 {
     for (CLBeaconRegion *beacon in [self.locationManager monitoredRegions])
     {
-        //NSLog(@"beacon: %@", beacon);
-        [self.locationManager startMonitoringForRegion:beacon];
-        [self startRanging];
-        [self.locationManager startUpdatingLocation];
+        if ([beacon isKindOfClass:[CLBeaconRegion class]]) {
+            CLBeaconRegion *region = beacon;
+            NSLog(@"beacon: %@", beacon);
+            region.notifyOnEntry = YES;
+            region.notifyOnExit = YES;
+            region.notifyEntryStateOnDisplay = YES;
+            
+            [self.beaconManager startMonitoringForRegion:region];
+            [self startRanging];
+            [self.beaconManager startRangingBeaconsInRegion: region];
+            [self.locationManager startUpdatingLocation];
+        }
     }
 }
 
@@ -94,12 +106,14 @@ static Beacon *sharedInstance = nil;
 {
     for (CLBeaconRegion *beacon in [self.locationManager monitoredRegions])
     {
-        CLBeaconRegion *region = beacon;
-        region.notifyOnEntry = YES;
-        region.notifyOnExit = YES;
-        region.notifyEntryStateOnDisplay = YES;
-        
-        [self.beaconManager startRangingBeaconsInRegion: region];
+        if ([beacon isKindOfClass:[CLBeaconRegion class]]) {
+            CLBeaconRegion *region = beacon;
+            region.notifyOnEntry = YES;
+            region.notifyOnExit = YES;
+            region.notifyEntryStateOnDisplay = YES;
+            
+            [self.beaconManager startRangingBeaconsInRegion: region];
+        }
     }
 }
 
