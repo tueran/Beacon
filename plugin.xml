@@ -2,7 +2,7 @@
 
 <plugin xmlns="http://cordova.apache.org/ns/plugins/1.0"
     id="com.siteforum.plugins.beacon"
-    version="2.0">
+    version="2.1">
     <name>Beacon</name>
 
     <engines>
@@ -22,8 +22,6 @@
         </js-module>
         <header-file src="src/ios/Beacon.h" />
          <source-file src="src/ios/Beacon.m" />
-         <header-file src="src/ios/BeaconHelper.h" />
-         <source-file src="src/ios/BeaconHelper.m" />
 
          <framework src="CoreLocation.framework" />
          <framework src="CoreBluetooth.framework" />
@@ -40,7 +38,7 @@
         <header-file src="lib/ios/EstimoteSDK/Headers/ESTDefinitions.h"/>
 
         <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
-            <string>This application uses your location to determine which table you're at when ordering your coffee.</string>
+            <string>This application uses your location to send you special offers.</string>
         </config-file>
 
         <config-file target="*-Info.plist" parent="NSLocationAlwaysUsageDescription">

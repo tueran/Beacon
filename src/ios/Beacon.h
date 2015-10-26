@@ -29,6 +29,8 @@
 
 + (Beacon *) sharedManager;
 - (void) start;
+- (void) checkBluetoothAccess;
+- (BOOL) isBluetoothActive;
 
 #pragma mark Plugin Functions
 - (void) addBeacon:(CDVInvokedUrlCommand*)command;
